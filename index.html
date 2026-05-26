@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>陈Cousins Road Trip 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --kl:#1D9E75; --kl-bg:#E8F8F2; --kl-dark:#085041;
+  --gt:#7F77DD; --gt-bg:#EEEDFE; --gt-dark:#26215C;
+  --ml:#D85A30; --ml-bg:#FAECE7; --ml-dark:#712B13;
+  --dr:#D97706; --dr-bg:#FEF3C7;
+  --waze:#00D4B4; --waze-dk:#00876E;
+  --navy:#0F172A; --text:#1E293B; --muted:#64748B;
+  --border:#E2E8F0; --bg:#F1F5F9; --card:#FFFFFF;
+  --r:12px; --rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px}
+
+/* ── HEADER ── */
+.app-header{background:var(--navy);padding:16px 20px 14px;position:sticky;top:0;z-index:100}
+.header-flag{font-size:22px;line-height:1}
+.header-row{display:flex;align-items:center;gap:10px}
+.header-title{font-family:'Crimson Pro',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:0.01em}
+.header-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;font-weight:300}
+.header-pills{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.header-pill{font-size:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.75);padding:3px 9px;border-radius:20px}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom,0)}
+.nav-btn{flex:1;border:none;background:none;padding:10px 8px 8px;font-family:'Outfit',sans-serif;font-size:11px;font-weight:500;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:color 0.15s;-webkit-tap-highlight-color:transparent}
+.nav-btn.active{color:var(--navy)}
+.nav-btn svg{width:22px;height:22px}
+.nav-dot{width:4px;height:4px;border-radius:50%;background:transparent;margin-top:1px}
+.nav-btn.active .nav-dot{background:var(--navy)}
+
+/* ── PAGES ── */
+.page{display:none}.page.active{display:block}
+.page-content{padding:16px;max-width:680px;margin:0 auto}
+
+/* ── SECTION HEADERS ── */
+.section-header{display:flex;align-items:center;gap:10px;padding:14px 0 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted)}
+.section-line{flex:1;height:1px;background:var(--border)}
+
+/* ── DAY CARDS (Full Plan) ── */
+.day-card{background:var(--card);border-radius:var(--r);border:1px solid var(--border);margin-bottom:10px;overflow:hidden}
+.day-card-header{padding:14px 16px 12px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent;display:flex;align-items:flex-start;gap:12px}
+.day-num{font-size:11px;font-weight:700;color:#fff;padding:4px 8px;border-radius:6px;min-width:46px;text-align:center;flex-shrink:0;margin-top:1px}
+.day-card-info{flex:1;min-width:0}
+.day-date{font-size:11px;color:var(--muted);font-weight:400}
+.day-title-text{font-size:15px;font-weight:600;margin-top:2px;line-height:1.3}
+.day-hotel-txt{font-size:11px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.chevron{width:18px;height:18px;color:var(--muted);transition:transform 0.2s;flex-shrink:0;margin-top:2px}
+.day-card.open .chevron{transform:rotate(180deg)}
+.day-body{display:none;padding:0 16px 14px}
+.day-card.open .day-body{display:block}
+
+/* ── ROUTE BOX ── */
+.route-box{border-radius:var(--rs);padding:10px 12px;margin-bottom:12px}
+.route-box.nav-box{background:#E8FBF8;border:1px solid var(--waze)}
+.route-box.drive-warn{background:#FEF9EC;border:1px solid var(--dr)}
+.route-hdr{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.nav-box .route-hdr{color:var(--waze-dk)}.drive-warn .route-hdr{color:#92400E}
+.route-seg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;border-top:1px solid rgba(0,0,0,.06)}
+.route-seg:first-of-type{border-top:none}
+.route-seg-label{flex:1;font-size:12px;min-width:130px;line-height:1.4}
+.route-meta{font-size:11px;color:var(--muted);white-space:nowrap}
+.waze-btn{display:inline-flex;align-items:center;gap:4px;background:var(--waze);color:#fff;text-decoration:none;font-size:11px;font-weight:700;padding:5px 10px;border-radius:6px;white-space:nowrap;font-family:'Outfit',sans-serif;letter-spacing:.01em}
+.stop-pill{font-size:10px;background:#FDE68A;color:#92400E;border:1px solid #FCD34D;padding:1px 6px;border-radius:20px}
+.direct-row{background:rgba(0,0,0,.03);border-radius:6px;padding:5px 8px;margin-top:4px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+
+/* ── ACTIVITIES ── */
+.activity{display:block;padding:8px 0;border-top:1px solid var(--border)}
+.activity:first-child{border-top:none;padding-top:0}
+.act-time{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.act-body{width:100%}
+.act-text{font-size:13px;line-height:1.5;color:var(--text)}
+.act-text b{font-weight:600}
+.act-contact{font-size:11px;color:var(--muted);margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500;display:inline-flex;align-items:center;gap:3px}
+.t-food{background:#FEF3C7;color:#92400E}
+.t-kids{background:#FDF2F8;color:#9D174D}
+.t-shop{background:#ECFDF5;color:#065F46}
+.t-sight{background:#EDE9FE;color:#4C1D95}
+.t-act{background:#EEF2FF;color:#3730A3}
+.t-tip{background:#FEF2F2;color:#991B1B}
+.t-walk{background:#F0FDF4;color:#14532D;border:1px solid #BBF7D0}
+.t-grab{background:#EFF6FF;color:#1E40AF;border:1px solid #BFDBFE}
+.t-drive{background:#FFFBEB;color:#78350F;border:1px solid #FDE68A}
+.t-drvrec{background:#FEF3C7;color:#78350F;border:1px solid #FCD34D}
+.t-drend{background:#F1F5F9;color:#475569;border:1px solid #CBD5E1}
+
+/* ── DINNER OPTIONS ── */
+.dinner-wrap{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.d-opt{border-radius:var(--rs);padding:10px 12px;font-size:12px;line-height:1.5}
+.d-opt-a{background:#E8F8F2;border:1px solid #6EE7B7}
+.d-opt-b{background:var(--bg);border:1px solid var(--border);color:var(--muted)}
+.d-opt-title{font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text)}
+.d-rec{display:inline-block;font-size:10px;background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:20px;margin-left:6px}
+.d-drive-note{background:#FEF9EC;border:1px solid #FCD34D;border-radius:6px;padding:7px 10px;font-size:11px;color:#78350F;margin-top:6px;display:flex;gap:6px;align-items:flex-start}
+
+/* ── WARN INLINE ── */
+.inline-warn{background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--rs);padding:8px 10px;margin-top:6px;font-size:11px;color:#78350F;display:flex;gap:6px}
+
+/* ── TODAY PAGE ── */
+.today-hero{padding:22px 20px 16px;border-bottom:1px solid var(--border);background:#fff}
+.today-status-line{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
+.today-big{display:flex;align-items:flex-end;gap:14px}
+.today-daynum{font-family:'Crimson Pro',serif;font-size:56px;font-weight:600;line-height:1;color:var(--navy)}
+.today-big-right{padding-bottom:6px}
+.today-datelabel{font-size:13px;color:var(--muted)}
+.today-main-title{font-size:19px;font-weight:700;margin-top:8px;line-height:1.3;color:var(--text)}
+.today-dest-pill{display:inline-block;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-top:8px;color:#fff;letter-spacing:.02em}
+.today-hotel{font-size:11px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:5px}
+.today-body{padding:16px;max-width:680px;margin:0 auto}
+.today-sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:14px 0 10px}
+
+/* Today route */
+.today-route{border-radius:var(--rs);padding:12px;margin-bottom:12px}
+.today-route.nav{background:#E8FBF8;border:1px solid var(--waze)}
+.today-route.warn{background:#FEF9EC;border:1px solid var(--dr)}
+.today-route-hdr{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.today-route.nav .today-route-hdr{color:var(--waze-dk)}
+.today-route.warn .today-route-hdr{color:#92400E}
+.today-rseg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid rgba(0,0,0,.07)}
+.today-rseg:first-of-type{border-top:none}
+.today-rseg-label{flex:1;font-size:13px;font-weight:500;min-width:130px;line-height:1.4}
+.today-rmeta{font-size:11px;color:var(--muted);white-space:nowrap}
+.waze-btn-lg{display:inline-flex;align-items:center;gap:5px;background:var(--waze);color:#fff;text-decoration:none;font-size:12px;font-weight:700;padding:7px 14px;border-radius:8px;white-space:nowrap;font-family:'Outfit',sans-serif}
+
+/* Today timeline */
+.timeline{position:relative;padding-left:32px}
+.timeline::before{content:'';position:absolute;left:7px;top:14px;bottom:14px;width:1px;background:var(--border)}
+.tl-item{position:relative;padding:0 0 12px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--border);z-index:1}
+.tl-dot.active{background:var(--navy);border-color:var(--navy)}
+.tl-card{background:#fff;border:1px solid var(--border);border-radius:var(--rs);padding:11px 13px}
+.tl-time{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.tl-title{font-size:14px;font-weight:600;color:var(--text)}
+.tl-detail{font-size:13px;color:var(--muted);margin-top:4px;line-height:1.5}
+.tl-contact{font-size:11px;color:var(--waze-dk);margin-top:4px;font-weight:500}
+
+/* Today warn */
+.today-warn{background:#FEF3C7;border:1px solid #FCD34D;border-radius:var(--rs);padding:10px 12px;font-size:12px;color:#78350F;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+
+/* Today dinner options */
+.today-dinner-wrap{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.td-opt{border-radius:var(--rs);padding:11px 13px}
+.td-opt-a{background:#E8F8F2;border:1px solid #6EE7B7}
+.td-opt-b{background:var(--bg);border:1px solid var(--border)}
+.td-opt-title{font-size:14px;font-weight:600;margin-bottom:5px}
+.td-opt-detail{font-size:12px;color:var(--muted);line-height:1.5}
+.td-drive-note{background:#FEF9EC;border:1px solid #FCD34D;border-radius:6px;padding:8px 11px;font-size:12px;color:#78350F;margin-top:8px;display:flex;gap:6px}
+
+/* Off-trip states */
+.offtrip{text-align:center;padding:60px 24px}
+.offtrip-emoji{font-size:60px;margin-bottom:16px}
+.offtrip-title{font-family:'Crimson Pro',serif;font-size:30px;font-weight:600;color:var(--navy);margin-bottom:8px}
+.offtrip-sub{font-size:15px;color:var(--muted);line-height:1.6}
+.countdown-num{font-family:'Crimson Pro',serif;font-size:80px;font-weight:600;color:var(--navy);line-height:1;margin:8px 0 4px}
+.countdown-unit{font-size:14px;color:var(--muted);font-weight:400}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* Desktop tweaks */
+@media(min-width:640px){.page-content{padding:20px 24px}.today-body{padding:20px 24px}.today-hero{padding:28px 24px 20px}}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-row">
+    <span class="header-flag">🇲🇾</span>
+    <div>
+      <div class="header-title">陈Cousins Road Trip 2026</div>
+      <div class="header-sub">Jun 13–20 &nbsp;·&nbsp; 3 Cars &nbsp;·&nbsp; 7 Adults + 3 Kids</div>
+    </div>
+  </div>
+  <div class="header-pills">
+    <span class="header-pill">📍 KL · Genting · Melaka</span>
+    <span class="header-pill">🏨 Somerset PJ · Antara Genting · Courtyard Melaka</span>
+  </div>
+</header>
+
+<!-- FULL PLAN PAGE -->
+<div id="page-plan" class="page">
+  <div class="page-content" id="plan-content"></div>
+</div>
+
+<!-- TODAY PAGE -->
+<div id="page-today" class="page active">
+  <div id="today-content"></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-today" onclick="showPage('today')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    Today
+    <div class="nav-dot"></div>
+  </button>
+  <button class="nav-btn" id="nav-plan" onclick="showPage('plan')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+    Full Plan
+    <div class="nav-dot"></div>
+  </button>
+</nav>
+
+<script>
+// ═══════════════════════════════════════
+// TRIP DATA
+// ═══════════════════════════════════════
+const TRIP = [
+  {
+    n:1, date:"2026-06-13", short:"Sat 13 Jun", full:"Saturday, 13 June 2026",
+    title:"Singapore → Kuala Lumpur", dest:"drive", destLabel:"Drive Day",
+    hotel:"Somerset Damansara Uptown, PJ",
+    route:{type:"nav", title:"Route Navigation · Start from Tuas Checkpoint",
+      segs:[
+        {from:"Tuas Checkpoint",to:"Tangkak Lay-by",stop:true,meta:"~200 km · ~2 hrs",waze:"https://waze.com/ul?ll=2.2672,102.5543&navigate=yes"},
+        {from:"Tangkak Lay-by",to:"Somerset Damansara PJ",meta:"~180 km · ~2 hrs",waze:"https://waze.com/ul?ll=3.1376,101.6217&navigate=yes"}
+      ]
+    },
+    warns:[],
+    acts:[
+      {time:"7:00 am",title:"Depart Singapore",detail:"Leave early via <b>Tuas Second Link</b> to beat weekend queues. Convoy briefing before departing.",tags:["tip"]},
+      {time:"~9:00 am",title:"Tangkak Lay-by",detail:"Toilet break and stretch. <b>No food stalls here</b> — pack snacks and drinks before leaving SG.",tags:["kids"],transport:"drive"},
+      {time:"12:00 pm",title:"Arrive Somerset PJ",detail:"Check in. Park all 3 cars — done for the next 2 days. Cashless parking only (Touch 'n Go / debit). 1 free spot per room, RM5 extra cars.",tags:[],transport:"drive-end"},
+      {time:"2:00 pm",title:"The Starling Mall",detail:"Connected directly to the hotel. Shops, supermarket, kids' play area — easy first afternoon.",tags:["shopping","kids"],transport:"walk"},
+      {time:"7:00 pm",title:"Tang Room — Dinner",detail:"Cantonese restaurant by the Oriental Group at The Starling Mall. Great for family dinners. <b>Book ahead for 10 pax.</b>",contact:"📞 03-7733 9866 · Level 2, Lots S232–236, The Starling Mall",tags:["food"],transport:"walk"}
+    ]
+  },
+  {
+    n:2, date:"2026-06-14", short:"Sun 14 Jun", full:"Sunday, 14 June 2026",
+    title:"KL City Day", dest:"kl", destLabel:"Kuala Lumpur",
+    hotel:"Somerset Damansara Uptown, PJ",
+    route:null, warns:[],
+    acts:[
+      {time:"8:30 am",title:"Nasi Lemak breakfast",detail:"<b>Village Park Restaurant</b> (1.5 km, Damansara Uptown) — famous crispy ayam goreng. A KL institution.",tags:["food"],transport:"grab"},
+      {time:"10:00 am",title:"Aquaria KLCC",detail:"Underwater tunnel, sharks, rays and more. Fully stroller-friendly — all 3 kids will love it. Located at KLCC.",tags:["activity","kids"],transport:"grab"},
+      {time:"1:00 pm",title:"Lunch at Suria KLCC",detail:"Food court with plenty of variety, or Madam Kwan's for Laksa Lemak. Petronas Twin Towers photo stop.",tags:["food"],transport:"walk"},
+      {time:"3:00 pm",title:"Shopping",detail:"Grab to <b>Pavilion KL</b> (10 min) — flagship stores, baby room available. Or <b>1 Utama</b> (close to hotel, Malaysia's largest mall).",tags:["shopping"],transport:"grab"},
+      {time:"7:00 pm",title:"Dinner",detail:"Grab to <b>Jalan Alor Food Street</b> (Bukit Bintang) — hawker stalls, grilled seafood, satay. Or a relaxed dinner in Damansara Uptown near the hotel.",tags:["food"],transport:"grab"}
+    ]
+  },
+  {
+    n:3, date:"2026-06-15", short:"Mon 15 Jun", full:"Monday, 15 June 2026",
+    title:"KL → Batu Caves → Genting", dest:"drive", destLabel:"Drive Day",
+    hotel:"Antara by Harvinton Mansion, Genting",
+    route:{type:"nav", title:"Route Navigation · Depart Somerset PJ",
+      segs:[
+        {from:"Somerset PJ",to:"Batu Caves",stop:true,stopLabel:"Optional",meta:"~25 km · ~30 min",waze:"https://waze.com/ul?ll=3.2372,101.6838&navigate=yes"},
+        {from:"Batu Caves",to:"Antara Genting",meta:"~55 km · ~1 hr",waze:"https://waze.com/ul?ll=3.4211,101.7942&navigate=yes"},
+        {direct:true,label:"Skip Batu Caves — direct to Genting:",waze:"https://waze.com/ul?ll=3.4211,101.7942&navigate=yes"}
+      ]
+    },
+    warns:[],
+    acts:[
+      {time:"9:00 am",title:"Check out Somerset PJ",detail:"Load all 3 cars. Return parking tokens before leaving.",tags:[],transport:"drive"},
+      {time:"10:00 am",title:"Batu Caves (optional)",detail:"Rainbow stairs + main temple cave — 272 steps. The 9 and 7-yr-olds can do it; 1-yr-old gets carried. Great photo stop along the route.",tags:["sights","kids"]},
+      {time:"12:30 pm",title:"Drive to Genting",detail:"Head up via Karak Highway — scenic mountain road. <b>Pack jackets!</b> Temperature at Genting is 15–22°C.",tags:["tip"],transport:"drive"},
+      {time:"2:30 pm",title:"Arrive Antara Genting",detail:"Check in at Antara by Harvinton Mansion. Park all 3 cars — most Genting activities are walkable from here. SkyWorlds is only 700m away!",tags:[],transport:"drive-end"},
+      {time:"4:30 pm",title:"Sky Avenue Mall",detail:"Connected to the resort area — shops, food, dining. Browse and warm up (it's cold up here!)",tags:["shopping"],transport:"walk"},
+      {time:"7:00 pm",title:"Skytropolis Indoor Theme Park",detail:"7-min walk from hotel. Evening session — gentle rides, arcade, bumper cars. All ages including toddlers welcome.",tags:["activity","kids"],transport:"walk"}
+    ]
+  },
+  {
+    n:4, date:"2026-06-16", short:"Tue 16 Jun", full:"Tuesday, 16 June 2026",
+    title:"Genting — Alternatives Day", dest:"genting", destLabel:"Genting Highlands",
+    hotel:"Antara by Harvinton Mansion, Genting",
+    route:{type:"warn", title:"Drive needed · Awana Skyway only",
+      segs:[
+        {from:"Antara Genting",to:"Awana Skyway Station",meta:"~3 km · ~8 min",waze:"https://waze.com/ul?q=Awana+Skyway+Genting+Highlands&navigate=yes"},
+        {from:"Awana Skyway",to:"Back to Antara Genting",meta:"~3 km · ~8 min",waze:"https://waze.com/ul?ll=3.4211,101.7942&navigate=yes"}
+      ]
+    },
+    warns:["⚠️ SkyWorlds Outdoor Theme Park is CLOSED every Tuesday. Drive your own cars to Awana Skyway — Grab is unreliable at Genting, especially for return trips."],
+    acts:[
+      {time:"10:00 am",title:"Awana Skyway Cable Car",detail:"Scenic gondola ride with stunning mountain views. Toddler-friendly. <b>Drive your own cars</b> to Awana station — Grab unreliable here.",tags:["activity","kids"],transport:"drive-rec"},
+      {time:"12:00 pm",title:"Chin Swee Caves Temple",detail:"Only 600m walk from Antara! Beautiful pagoda with panoramic highland views. Great photo stop.",tags:["sights"],transport:"walk"},
+      {time:"2:00 pm",title:"Skytropolis Indoor Theme Park",detail:"7-min walk from hotel. All ages welcome — gentle rides for toddlers, arcade games for older kids.",tags:["activity","kids"],transport:"walk"},
+      {time:"5:00 pm",title:"Sky Avenue Mall",detail:"Warm up with hot drinks. Browse outlet stores and shops.",tags:["shopping"],transport:"walk"},
+      {time:"7:30 pm",title:"Dinner + Karaoke",detail:"Dinner at Sky Avenue food hall. Use the hotel's karaoke rooms after for a great group night in!",tags:["food"],transport:"walk"}
+    ]
+  },
+  {
+    n:5, date:"2026-06-17", short:"Wed 17 Jun", full:"Wednesday, 17 June 2026",
+    title:"Genting SkyWorlds — Full Day", dest:"genting", destLabel:"Genting Highlands",
+    hotel:"Antara by Harvinton Mansion, Genting",
+    route:null, warns:[],
+    acts:[
+      {time:"9:30 am",title:"Walk to SkyWorlds",detail:"700m from hotel, ~10 mins walk. Arrive before 10am opening to be first in. Use the <b>Virtual Queue app</b> to reserve top 3 rides immediately.",tags:["tip"],transport:"walk"},
+      {time:"10:30 am",title:"Kids' Rides",detail:"<b>Rio Carousel</b>, <b>Samba Gliders</b>, Ice Age themed rides. Min height 80cm with adult for most rides. 1-yr-old best enjoyed via shows, parades, and themed areas.",tags:["activity","kids"]},
+      {time:"12:30 pm",title:"Adults' Turn",detail:"Split into groups — adults take turns on <b>Eagle Mountain</b> roller coaster and Andromeda Base while others stay with the kids.",tags:["activity"]},
+      {time:"1:30 pm",title:"Lunch in the Park",detail:"Themed dining areas throughout SkyWorlds. Pack snacks and puree for the 1-yr-old.",tags:["food","kids"]},
+      {time:"3:00 pm",title:"Live Shows & Parades",detail:"Catch a street show or parade — great for the little ones and a breather from rides.",tags:["kids"]},
+      {time:"6:00 pm",title:"Park Closes — Walk Back",detail:"Stroll the 700m back to Antara. Early night recommended — big drive to Melaka tomorrow.",tags:["tip"],transport:"walk"}
+    ]
+  },
+  {
+    n:6, date:"2026-06-18", short:"Thu 18 Jun", full:"Thursday, 18 June 2026",
+    title:"Genting → Melaka", dest:"drive", destLabel:"Drive Day",
+    hotel:"Courtyard by Marriott Melaka",
+    route:{type:"nav", title:"Route Navigation · Depart Antara Genting",
+      segs:[
+        {from:"Antara Genting",to:"Seremban R&R",stop:true,stopLabel:"Food stop",meta:"~115 km · ~1.5 hrs",waze:"https://waze.com/ul?q=Seremban+R%26R+North+South+Expressway&navigate=yes"},
+        {from:"Seremban R&R",to:"Courtyard by Marriott Melaka",meta:"~145 km · ~1.5 hrs",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"}
+      ]
+    },
+    warns:[],
+    acts:[
+      {time:"9:00 am",title:"Check out Antara Genting",detail:"Load all 3 cars. Descend via the Karak Highway back toward the main highway.",tags:[],transport:"drive"},
+      {time:"11:00 am",title:"Seremban R&R — Must Stop!",detail:"Famous for <b>Seremban Siew Pau</b> (baked buns) and Nasi Lemak. Don't skip this stop — one of Malaysia's best highway food spots.",tags:["food"]},
+      {time:"1:00 pm",title:"Arrive Courtyard Melaka",detail:"Check in. Park all 3 cars in the <b>covered garage, levels 5–7 (free)</b>. Cars stay here for the rest of the Melaka stay — the hotel is centrally located.",tags:[],transport:"drive-end"},
+      {time:"3:00 pm",title:"Jonker Street Area",detail:"Hotel is steps from Stadthuys, Christ Church, and Jonker Street. Walk the Chinatown area and browse the shophouses.",tags:["sights","shopping"],transport:"walk"},
+      {time:"7:00 pm",title:"Chicken Rice Balls — Dinner",detail:"Melaka's signature dish — compressed rice rolled into balls, served with Hainanese chicken. Kids love the finger-food format. Find near Jonker Street.",tags:["food","kids"],transport:"walk"}
+    ]
+  },
+  {
+    n:7, date:"2026-06-19", short:"Fri 19 Jun", full:"Friday, 19 June 2026",
+    title:"Best of Melaka — Full Day", dest:"melaka", destLabel:"Melaka",
+    hotel:"Courtyard by Marriott Melaka",
+    route:{type:"warn", title:"Drive needed · Lucky Palace dinner only",
+      segs:[
+        {from:"Courtyard Melaka",to:"Lucky Palace Restaurant",meta:"~10 km · ~15 min",waze:"https://waze.com/ul?ll=2.2511,102.2895&navigate=yes"},
+        {from:"Lucky Palace",to:"Back to Courtyard Melaka",meta:"~10 km · ~15 min",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"}
+      ]
+    },
+    warns:[],
+    acts:[
+      {time:"9:00 am",title:"Breakfast at Courtyard Café",detail:"Hotel buffet breakfast. Fuel up before a packed day.",tags:["food"],transport:"walk"},
+      {time:"10:00 am",title:"Dutch Square + Trishaw Ride",detail:"<b>Christ Church, Stadthuys</b> (red buildings) — steps from the hotel. Book <b>2–3 trishaws</b> decorated with lights and music. Kids will love it!",tags:["sights","kids"],transport:"walk"},
+      {time:"11:30 am",title:"A Famosa + Upside Down House",detail:"<b>A Famosa</b> (16th-century Portuguese fort ruins) is walkable. <b>Upside Down House</b> nearby — inverted home with gravity-defying props. Great family photos!",tags:["sights","activity","kids"],transport:"walk"},
+      {time:"1:00 pm",title:"Lunch",detail:"Chicken rice balls again, or <b>Nyonya Delights</b> for authentic Peranakan home cooking.",tags:["food"],transport:"walk"},
+      {time:"2:30 pm",title:"Shore Oceanarium",detail:"At The Shore Shopping Gallery (~3 km from hotel). Marine exhibits, great for all 3 kids. Adults can browse the mall.",tags:["activity","kids","shopping"],transport:"grab"},
+      {time:"5:00 pm",title:"Melaka River Cruise",detail:"45-minute boat ride past heritage shophouses, murals, and bridges. Beautiful at dusk. Leave stroller at shore.",tags:["activity"],transport:"walk"},
+      {time:"6:30 pm",title:"Tan Kim Hock — Souvenirs",detail:"100+ local products: dodol, coconut candy, gula melaka, sambal. Durian cendol stall outside. Stock up before heading home tomorrow!",tags:["shopping","food"],transport:"walk"},
+      {time:"8:00 pm",title:"Dinner",detail:"",isDinner:true,tags:["food"],
+        dinnerOpts:[
+          {a:true,title:"Lucky Palace Restaurant",rec:"Best for elderlies",detail:"Chinese fine dining · Grand setting with chandeliers · Banquet menu · ~10 min drive · Use your own 3 cars from the hotel garage.",driveNote:"Drive your own cars. 10 pax + 10pm Friday return = don't risk Grab. Lucky Palace has ample parking.",contact:"📞 +60 6-253 0000 · 1, Jalan Sri Rama 1, Taman Muzaffar Shah, Ayer Keroh · Book ahead!",wazeNote:true},
+          {a:false,title:"Nyonya cuisine",detail:"Nancy's Kitchen or Nyonya Makke — authentic Peranakan farewell meal. Walkable from the hotel."}
+        ]
+      }
+    ]
+  },
+  {
+    n:8, date:"2026-06-20", short:"Sat 20 Jun", full:"Saturday, 20 June 2026",
+    title:"Melaka → Singapore", dest:"drive", destLabel:"Drive Day — Return",
+    hotel:"Tuas Second Link, Singapore",
+    route:{type:"nav", title:"Route Navigation · Final destination: Tuas Checkpoint",
+      segs:[
+        {from:"Courtyard Melaka",to:"Tuas Second Link Singapore",meta:"~230 km · ~2.5 hrs",waze:"https://waze.com/ul?ll=1.3254,103.6383&navigate=yes"}
+      ]
+    },
+    warns:[],
+    acts:[
+      {time:"8:00 am",title:"Jonker Street Saturday Morning",detail:"Early visit before crowds arrive. Grab <b>cendol at Cendol Kampung Hulu</b> — short walk from hotel. Browse the Saturday market stalls.",tags:["food","shopping"],transport:"walk"},
+      {time:"9:30 am",title:"Check out Courtyard Marriott",detail:"Retrieve cars from covered garage levels 5–7. Do a final check for kids' belongings in the rooms!",tags:["kids"]},
+      {time:"10:00 am",title:"Depart Melaka",detail:"Head north on the North-South Expressway toward Singapore. <b>Use Tuas Second Link</b> to avoid Woodlands Saturday queues.",tags:["tip"],transport:"drive"},
+      {time:"12:30 pm",title:"🏁 Back in Singapore",detail:"Arrive via Tuas Checkpoint. Road trip complete! 8 days, 3 destinations, 1 unforgettable trip.",tags:[]}
+    ]
+  }
+];
+
+const DEST_META = {
+  kl:    {label:"Kuala Lumpur",   color:"#1D9E75", bg:"#E8F8F2"},
+  genting:{label:"Genting Highlands",color:"#7F77DD",bg:"#EEEDFE"},
+  melaka: {label:"Melaka",         color:"#D85A30", bg:"#FAECE7"},
+  drive:  {label:"Drive Day",      color:"#D97706", bg:"#FEF3C7"}
+};
+
+// ═══════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════
+const TAGS = {
+  food:"t-food",kids:"t-kids",shopping:"t-shop",sights:"t-sight",
+  activity:"t-act",tip:"t-tip"
+};
+const TRANSPORT_TAGS = {
+  walk:{cls:"t-walk",label:"🚶 Walk"},
+  grab:{cls:"t-grab",label:"🚕 Grab"},
+  drive:{cls:"t-drive",label:"🚗 Drive"},
+  "drive-end":{cls:"t-drend",label:"🅿️ Park & done"},
+  "drive-rec":{cls:"t-drvrec",label:"⚠️ Drive rec."}
+};
+
+function tagHTML(tags, transport) {
+  let h = '<div class="tags">';
+  if (transport && TRANSPORT_TAGS[transport]) {
+    const t = TRANSPORT_TAGS[transport];
+    h += `<span class="tag ${t.cls}">${t.label}</span>`;
+  }
+  (tags||[]).forEach(t => {
+    if (TAGS[t]) h += `<span class="tag ${TAGS[t]}">${t}</span>`;
+  });
+  h += '</div>';
+  return h;
+}
+
+function routeBoxHTML(route, size) {
+  if (!route) return '';
+  const isBig = size === 'big';
+  const boxCls = route.type === 'nav' ? 'nav' : 'warn';
+  let h = `<div class="${isBig ? 'today-route' : 'route-box'} ${isBig ? boxCls : (route.type==='nav'?'nav-box':'drive-warn')}">`;
+  h += `<div class="${isBig ? 'today-route-hdr' : 'route-hdr'}">`;
+  h += route.type === 'nav' ? '🗺 ' : '⚠️ ';
+  h += route.title + '</div>';
+  route.segs.forEach(s => {
+    if (s.direct) {
+      h += `<div class="direct-row">↩ ${s.label} <a class="waze-btn" href="${s.waze}" target="_blank">Waze ↗</a></div>`;
+    } else {
+      const stop = s.stop ? `<span class="stop-pill">${s.stopLabel||'Stop'}</span>` : '';
+      const wbtn = isBig
+        ? `<a class="waze-btn-lg" href="${s.waze}" target="_blank">📍 Navigate</a>`
+        : `<a class="waze-btn" href="${s.waze}" target="_blank">📍 Waze</a>`;
+      const segCls = isBig ? 'today-rseg' : 'route-seg';
+      const labelCls = isBig ? 'today-rseg-label' : 'route-seg-label';
+      const metaCls = isBig ? 'today-rmeta' : 'route-meta';
+      h += `<div class="${segCls}">
+        <div class="${labelCls}">📍 ${s.from} → ${s.to} ${stop}</div>
+        <span class="${metaCls}">${s.meta}</span>
+        ${wbtn}
+      </div>`;
+    }
+  });
+  h += '</div>';
+  return h;
+}
+
+function dinnerOptsHTML(opts, big) {
+  let h = big ? '<div class="today-dinner-wrap">' : '<div class="dinner-wrap">';
+  opts.forEach(o => {
+    if (o.a) {
+      h += big
+        ? `<div class="td-opt td-opt-a"><div class="td-opt-title">Option A — ${o.title} <span class="d-rec">${o.rec}</span></div><div class="td-opt-detail">${o.detail}</div><div class="td-drive-note"><span>⚠️</span><div>${o.driveNote}</div></div><div style="margin-top:8px;font-size:12px;color:#065F46">${o.contact}</div></div>`
+        : `<div class="d-opt d-opt-a"><div class="d-opt-title">Option A — ${o.title} <span class="d-rec">${o.rec}</span></div>${o.detail}<div class="d-drive-note"><span>⚠️</span><div>${o.driveNote}</div></div><div style="margin-top:6px;font-size:11px;color:#065F46">${o.contact}</div></div>`;
+    } else {
+      h += big
+        ? `<div class="td-opt td-opt-b"><div class="td-opt-title">Option B — ${o.title}</div><div class="td-opt-detail">${o.detail} <span class="tag t-walk">🚶 Walk</span></div></div>`
+        : `<div class="d-opt d-opt-b"><b>Option B — ${o.title}</b><br>${o.detail} <span class="tag t-walk">🚶 Walk</span></div>`;
+    }
+  });
+  h += '</div>';
+  return h;
+}
+
+// ═══════════════════════════════════════
+// RENDER FULL PLAN
+// ═══════════════════════════════════════
+function renderPlan() {
+  const container = document.getElementById('plan-content');
+  const sections = {kl:[],genting:[],melaka:[]};
+  const drives = [];
+
+  TRIP.forEach(day => {
+    if (day.dest === 'drive') drives.push(day);
+    else sections[day.dest].push(day);
+  });
+
+  let html = '';
+
+  // Helper to render day card
+  function dayCard(day) {
+    const dm = DEST_META[day.dest];
+    let bodyHtml = '';
+    if (day.warns.length) {
+      day.warns.forEach(w => {
+        bodyHtml += `<div class="today-warn"><span>⚠️</span><div>${w}</div></div>`;
+      });
+    }
+    if (day.route) bodyHtml += routeBoxHTML(day.route, 'small');
+
+    bodyHtml += '<div class="activity">';
+    day.acts.forEach((a, i) => {
+      bodyHtml += `<div class="activity">
+        <div class="act-time">${a.time}</div>
+        <div class="act-body">
+          <div class="act-text">${a.detail||a.title}</div>`;
+      if (a.contact) bodyHtml += `<div class="act-contact">${a.contact}</div>`;
+      if (a.isDinner && a.dinnerOpts) bodyHtml += dinnerOptsHTML(a.dinnerOpts, false);
+      bodyHtml += tagHTML(a.tags, a.transport);
+      bodyHtml += '</div></div>';
+    });
+    bodyHtml += '</div>';
+
+    return `<div class="day-card" id="dc-${day.n}">
+      <div class="day-card-header" onclick="toggleDay(${day.n})">
+        <span class="day-num" style="background:${dm.color}">Day ${day.n}</span>
+        <div class="day-card-info">
+          <div class="day-date">${day.short}</div>
+          <div class="day-title-text">${day.title}</div>
+          <div class="day-hotel-txt">🏨 ${day.hotel}</div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="day-body">${bodyHtml}</div>
+    </div>`;
+  }
+
+  // Drive days first map for quick lookup
+  const driveByDate = {};
+  drives.forEach(d => { driveByDate[d.date] = d; });
+
+  // Render drives between sections
+  function driveCard(d) {
+    return `<div class="section-header"><div class="section-line"></div><span>🚗 ${d.short} — ${d.title}</span><div class="section-line"></div></div>${dayCard(d)}`;
+  }
+
+  // Day 1 drive
+  html += driveCard(TRIP[0]);
+
+  // KL section
+  const klDays = TRIP.filter(d => d.dest === 'kl');
+  if (klDays.length) {
+    const dm = DEST_META.kl;
+    html += `<div class="section-header"><div class="section-line"></div><span style="color:${dm.color}">📍 Kuala Lumpur</span><div class="section-line"></div></div>`;
+    klDays.forEach(d => { html += dayCard(d); });
+  }
+
+  // Day 3 drive
+  html += driveCard(TRIP[2]);
+
+  // Genting section
+  const gtDays = TRIP.filter(d => d.dest === 'genting');
+  if (gtDays.length) {
+    const dm = DEST_META.genting;
+    html += `<div class="section-header"><div class="section-line"></div><span style="color:${dm.color}">📍 Genting Highlands</span><div class="section-line"></div></div>`;
+    gtDays.forEach(d => { html += dayCard(d); });
+  }
+
+  // Day 6 drive
+  html += driveCard(TRIP[5]);
+
+  // Melaka section
+  const mlDays = TRIP.filter(d => d.dest === 'melaka');
+  if (mlDays.length) {
+    const dm = DEST_META.melaka;
+    html += `<div class="section-header"><div class="section-line"></div><span style="color:${dm.color}">📍 Melaka</span><div class="section-line"></div></div>`;
+    mlDays.forEach(d => { html += dayCard(d); });
+  }
+
+  // Day 8 drive
+  html += driveCard(TRIP[7]);
+
+  container.innerHTML = html;
+}
+
+function toggleDay(n) {
+  const card = document.getElementById(`dc-${n}`);
+  card.classList.toggle('open');
+}
+
+// ═══════════════════════════════════════
+// RENDER TODAY
+// ═══════════════════════════════════════
+function renderToday() {
+  const container = document.getElementById('today-content');
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tripStart = new Date(2026, 5, 13); // Jun 13
+  const tripEnd   = new Date(2026, 5, 20); // Jun 20
+
+  if (today < tripStart) {
+    const diff = Math.ceil((tripStart - today) / 86400000);
+    container.innerHTML = `
+      <div class="offtrip">
+        <div class="offtrip-emoji">✈️</div>
+        <div class="countdown-num">${diff}</div>
+        <div class="countdown-unit">${diff === 1 ? 'day' : 'days'} until departure</div>
+        <div class="offtrip-title" style="margin-top:20px">Trip hasn't started yet!</div>
+        <div class="offtrip-sub">You leave for Malaysia on <b>Saturday, 13 June 2026</b>.<br>Check the Full Plan tab to prepare.</div>
+      </div>`;
+    return;
+  }
+
+  if (today > tripEnd) {
+    container.innerHTML = `
+      <div class="offtrip">
+        <div class="offtrip-emoji">🏁</div>
+        <div class="offtrip-title">Trip Complete!</div>
+        <div class="offtrip-sub">Hope it was an amazing 8 days across<br>KL, Genting, and Melaka 🇲🇾<br><br>Check the Full Plan tab to relive the memories.</div>
+      </div>`;
+    return;
+  }
+
+  const dayIdx = Math.floor((today - tripStart) / 86400000);
+  const day = TRIP[dayIdx];
+  const dm = DEST_META[day.dest];
+
+  // Hero
+  let heroHtml = `
+    <div class="today-hero">
+      <div class="today-status-line">Today · Day ${day.n} of 8</div>
+      <div class="today-big">
+        <div class="today-daynum">Day ${day.n}</div>
+        <div class="today-big-right">
+          <div class="today-datelabel">${day.full}</div>
+        </div>
+      </div>
+      <div class="today-main-title">${day.title}</div>
+      <span class="today-dest-pill" style="background:${dm.color}">${dm.label}</span>
+      <div class="today-hotel">🏨 ${day.hotel}</div>
+    </div>`;
+
+  // Body
+  let bodyHtml = '<div class="today-body">';
+
+  // Warns
+  if (day.warns.length) {
+    day.warns.forEach(w => {
+      bodyHtml += `<div class="today-warn"><span>⚠️</span><div>${w}</div></div>`;
+    });
+  }
+
+  // Route navigation
+  if (day.route) {
+    bodyHtml += '<div class="today-sec-title">Navigation</div>';
+    bodyHtml += routeBoxHTML(day.route, 'big');
+  }
+
+  // Activities timeline
+  bodyHtml += '<div class="today-sec-title">Today\'s Schedule</div>';
+  bodyHtml += '<div class="timeline">';
+
+  day.acts.forEach((a, i) => {
+    const isNow = (() => {
+      const hr = now.getHours();
+      const match = a.time.match(/(\d+):(\d+)\s*(am|pm)/i);
+      if (!match) return false;
+      let h = parseInt(match[1]);
+      const ampm = match[3].toLowerCase();
+      if (ampm === 'pm' && h !== 12) h += 12;
+      if (ampm === 'am' && h === 12) h = 0;
+      // Check if we're within 2 hours of this activity
+      const nextAct = day.acts[i+1];
+      let nextH = 24;
+      if (nextAct) {
+        const nm = nextAct.time.match(/(\d+):(\d+)\s*(am|pm)/i);
+        if (nm) { let nh = parseInt(nm[1]); if(nm[3].toLowerCase()==='pm'&&nh!==12)nh+=12; if(nm[3].toLowerCase()==='am'&&nh===12)nh=0; nextH=nh; }
+      }
+      return hr >= h && hr < nextH;
+    })();
+
+    bodyHtml += `<div class="tl-item">
+      <div class="tl-dot${isNow?' active':''}"></div>
+      <div class="tl-card" style="${isNow?`border-color:${dm.color};border-width:1.5px`:''}">
+        <div class="tl-time">${a.time}</div>
+        <div class="tl-title">${a.title}</div>`;
+    if (a.detail && !a.isDinner) {
+      bodyHtml += `<div class="tl-detail">${a.detail}</div>`;
+    }
+    if (a.contact) bodyHtml += `<div class="tl-contact">${a.contact}</div>`;
+    if (a.isDinner && a.dinnerOpts) {
+      bodyHtml += '<div class="tl-detail">Choose your dinner:</div>';
+      bodyHtml += dinnerOptsHTML(a.dinnerOpts, true);
+    }
+    bodyHtml += tagHTML(a.tags, a.transport);
+    bodyHtml += '</div></div>';
+  });
+
+  bodyHtml += '</div></div>';
+  container.innerHTML = heroHtml + bodyHtml;
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showPage(p) {
+  document.getElementById('page-plan').classList.toggle('active', p === 'plan');
+  document.getElementById('page-today').classList.toggle('active', p === 'today');
+  document.getElementById('nav-plan').classList.toggle('active', p === 'plan');
+  document.getElementById('nav-today').classList.toggle('active', p === 'today');
+  window.scrollTo(0,0);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+renderPlan();
+renderToday();
+</script>
+</body>
+</html>
