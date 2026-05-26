@@ -223,15 +223,16 @@ const TRIP = [
     hotel:"Somerset Damansara Uptown, PJ",
     route:{type:"nav", title:"Route Navigation · Start from Tuas Checkpoint",
       segs:[
-        {from:"Tuas Checkpoint",to:"Tangkak Lay-by",stop:true,meta:"~200 km · ~2 hrs",waze:"https://waze.com/ul?ll=2.2672,102.5543&navigate=yes"},
-        {from:"Tangkak Lay-by",to:"Somerset Damansara PJ",meta:"~180 km · ~2 hrs",waze:"https://waze.com/ul?ll=3.1376,101.6217&navigate=yes"}
+        {from:"Tuas Checkpoint",to:"Tangkak",stop:true,stopLabel:"Breakfast",meta:"~200 km · ~2.5 hrs",waze:"https://waze.com/ul?ll=2.2672,102.5543&navigate=yes"},
+        {from:"Tangkak",to:"Somerset Damansara PJ",meta:"~180 km · ~1.5 hrs",waze:"https://waze.com/ul?ll=3.1376,101.6217&navigate=yes"}
       ]
     },
     warns:[],
     acts:[
-      {time:"7:00 am",title:"Depart Singapore",detail:"Leave early via <b>Tuas Second Link</b> to beat weekend queues. Convoy briefing before departing.",tags:["tip"]},
-      {time:"~9:00 am",title:"Tangkak Lay-by",detail:"Toilet break and stretch. <b>No food stalls here</b> — pack snacks and drinks before leaving SG.",tags:["kids"],transport:"drive"},
-      {time:"12:00 pm",title:"Arrive Somerset PJ",detail:"Check in. Park all 3 cars — done for the next 2 days. Cashless parking only (Touch 'n Go / debit). 1 free spot per room, RM5 extra cars.",tags:[],transport:"drive-end"},
+      {time:"5:30 am",title:"Depart Singapore",detail:"Leave early via <b>Tuas Second Link</b> to beat the weekend morning queue. Convoy briefing before departing.",tags:["tip"]},
+      {time:"8:00 am",title:"Breakfast in Tangkak",detail:"Arrive Tangkak for a proper sit-down breakfast. Stretch the legs, fuel up, and let the kids run around before the next leg.",tags:["food","kids"],transport:"drive"},
+      {time:"9:30 am",title:"Depart Tangkak → KL",detail:"Back on the road. ~180 km to Somerset PJ via the North-South Expressway.",tags:[],transport:"drive"},
+      {time:"~11:30 am",title:"Arrive Somerset PJ",detail:"Check in. Park all 3 cars — done for the next 2 days. Cashless parking only (Touch 'n Go / debit). 1 free spot per room, RM5 extra cars.",tags:[],transport:"drive-end"},
       {time:"2:00 pm",title:"The Starling Mall",detail:"Connected directly to the hotel. Shops, supermarket, kids' play area — easy first afternoon.",tags:["shopping","kids"],transport:"walk"},
       {time:"7:00 pm",title:"Tang Room — Dinner",detail:"Cantonese restaurant by the Oriental Group at The Starling Mall. Great for family dinners. <b>Book ahead for 10 pax.</b>",contact:"📞 03-7733 9866 · Level 2, Lots S232–236, The Starling Mall",tags:["food"],transport:"walk"}
     ]
