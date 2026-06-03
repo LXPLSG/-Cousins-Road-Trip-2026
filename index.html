@@ -184,6 +184,26 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 
 /* Desktop tweaks */
 @media(min-width:640px){.page-content{padding:20px 24px}.today-body{padding:20px 24px}.today-hero{padding:28px 24px 20px}}
+
+/* Packing Reminder */
+.packing-section{margin-top:20px;background:#fff;border-radius:var(--rs);border:1px solid var(--border);overflow:hidden}
+.packing-header{display:flex;align-items:center;gap:10px;padding:14px 16px;background:linear-gradient(135deg,#1e3a5f 0%,#2563a8 100%);color:#fff}
+.packing-header-icon{font-size:22px}
+.packing-header-text{font-size:14px;font-weight:700;letter-spacing:.02em}
+.packing-header-sub{font-size:11px;opacity:.8;margin-top:2px}
+.packing-list{padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.packing-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;background:#f8faff;border:1px solid #e8eef8;cursor:pointer;transition:all .2s}
+.packing-item:hover{background:#eef4ff;border-color:#bdd3f5}
+.packing-item.checked{background:#f0faf0;border-color:#a8d8a8;opacity:.75}
+.packing-item-icon{font-size:20px;width:32px;text-align:center;flex-shrink:0}
+.packing-item-label{font-size:13px;font-weight:600;color:var(--text);flex:1}
+.packing-item.checked .packing-item-label{text-decoration:line-through;color:var(--muted)}
+.packing-check{width:20px;height:20px;border-radius:50%;border:2px solid #bdd3f5;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.packing-item.checked .packing-check{background:#4caf50;border-color:#4caf50;color:#fff}
+.packing-progress{padding:10px 16px 14px;display:flex;align-items:center;gap:10px}
+.packing-prog-bar{flex:1;height:6px;background:#e8eef8;border-radius:3px;overflow:hidden}
+.packing-prog-fill{height:100%;background:linear-gradient(90deg,#2563a8,#34d399);border-radius:3px;transition:width .3s}
+.packing-prog-text{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -639,12 +659,155 @@ function renderToday() {
 
   if (today < tripStart) {
     const diff = Math.ceil((tripStart - today) / 86400000);
+    const packingItems = [
+      { icon: '🛂', label: 'Passports' },
+      { icon: '💳', label: 'Touch & Go Card' },
+      { icon: '📻', label: 'Walkie Talkie' },
+      { icon: '⛽', label: 'Pump Petrol' },
+    ];
+    const savedChecks = JSON.parse(localStorage.getItem('packingChecks') || '{}');
+    const checkedCount = packingItems.filter((_, i) => savedChecks[i]).length;
+    const allDone = checkedCount === packingItems.length;
+    const pct = Math.round((checkedCount / packingItems.length) * 100);
+
+    // ── All packed: show Day 1 itinerary as the full Today view ──
+    const showingDay1 = sessionStorage.getItem('showDay1') === 'true';
+
+    window.goToChecklist = function() {
+      sessionStorage.setItem('showDay1', 'false');
+      renderToday();
+      window.scrollTo(0, 0);
+    };
+    window.goToDay1 = function() {
+      sessionStorage.setItem('showDay1', 'true');
+      renderToday();
+      window.scrollTo(0, 0);
+    };
+
+    if (allDone && showingDay1) {
+      const day1 = TRIP[0];
+      const dm1 = DEST_META[day1.dest];
+
+      function day1TimelineFor(actsArr) {
+        let h = '<div class="timeline">';
+        actsArr.forEach(a => {
+          h += `<div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-card">
+              <div class="tl-time">${a.time}</div>
+              <div class="tl-title">${a.title}</div>`;
+          if (a.detail && !a.isDinner) h += `<div class="tl-detail">${a.detail}</div>`;
+          if (a.contact) h += `<div class="tl-contact">${a.contact}</div>`;
+          if (a.isDinner && a.dinnerOpts) {
+            h += '<div class="tl-detail">Choose your dinner:</div>';
+            h += dinnerOptsHTML(a.dinnerOpts, true);
+          }
+          h += tagHTML(a.tags, a.transport);
+          h += '</div></div>';
+        });
+        h += '</div>';
+        return h;
+      }
+
+      let bodyHtml = '<div class="today-body">';
+      if (day1.warns.length) {
+        day1.warns.forEach(w => { bodyHtml += `<div class="today-warn"><span>⚠️</span><div>${w}</div></div>`; });
+      }
+      if (day1.route) {
+        bodyHtml += '<div class="today-sec-title">Navigation</div>' + routeBoxHTML(day1.route, 'big');
+      }
+      bodyHtml += '<div class="today-sec-title">Day 1 Schedule</div>';
+      if (day1.hasOpts) {
+        bodyHtml += `
+          <div class="opt-toggle" style="margin-bottom:16px">
+            <button class="opt-btn active" id="td-btn-a" onclick="switchTodayOpt('a')">
+              ${day1.optA.label}<br><span class="opt-badge opt-badge-orig">${day1.optA.sublabel}</span>
+            </button>
+            <button class="opt-btn" id="td-btn-b" onclick="switchTodayOpt('b')">
+              ${day1.optB.label}<br><span class="opt-badge opt-badge-trx">${day1.optB.sublabel}</span>
+            </button>
+          </div>
+          <div class="opt-panel active" id="td-panel-a">${day1TimelineFor(day1.optA.acts)}</div>
+          <div class="opt-panel" id="td-panel-b">${day1TimelineFor(day1.optB.acts)}</div>`;
+      } else {
+        bodyHtml += day1TimelineFor(day1.acts);
+      }
+      bodyHtml += `<div style="padding:8px 0 16px;text-align:center">
+        <button onclick="goToChecklist()" style="background:none;border:1px solid var(--border);border-radius:20px;padding:7px 18px;font-size:12px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+          🎒 Back to packing checklist
+        </button>
+      </div>`;
+      bodyHtml += '</div>';
+
+      container.innerHTML = `
+        <div class="today-hero">
+          <div class="today-status-line">✅ All packed! · Day 1 of 8</div>
+          <div class="today-big">
+            <div class="today-daynum">Day 1</div>
+            <div class="today-big-right">
+              <div class="today-datelabel">${day1.full}</div>
+            </div>
+          </div>
+          <div class="today-main-title">${day1.title}</div>
+          <span class="today-dest-pill" style="background:${dm1.color}">${dm1.label}</span>
+          <div class="today-hotel">🏨 ${day1.hotel}</div>
+        </div>
+        ${bodyHtml}`;
+      return;
+    }
+
+    // ── Checklist view (incomplete, or complete but not switched) ──
+    // Override togglePacking to auto-switch when last item checked
+    window.togglePacking = function(idx) {
+      const saved = JSON.parse(localStorage.getItem('packingChecks') || '{}');
+      saved[idx] = !saved[idx];
+      localStorage.setItem('packingChecks', JSON.stringify(saved));
+      const nowAllDone = packingItems.every((_, i) => saved[i]);
+      if (nowAllDone) {
+        sessionStorage.setItem('showDay1', 'true');
+      }
+      renderToday();
+    };
+
+    let packingListHtml = packingItems.map((item, i) => {
+      const isChecked = savedChecks[i] || false;
+      return `<div class="packing-item${isChecked ? ' checked' : ''}" onclick="togglePacking(${i})">
+        <div class="packing-item-icon">${item.icon}</div>
+        <div class="packing-item-label">${item.label}</div>
+        <div class="packing-check">${isChecked ? '✓' : ''}</div>
+      </div>`;
+    }).join('');
+
+    const day1Btn = allDone ? `
+      <div style="padding:12px 16px 16px;text-align:center">
+        <button onclick="goToDay1()" style="background:var(--navy);color:#fff;border:none;border-radius:20px;padding:9px 22px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;letter-spacing:.02em">
+          View Day 1 Itinerary →
+        </button>
+      </div>` : '';
+
     container.innerHTML = `
       <div class="offtrip">
         <div class="countdown-num">${diff}</div>
         <div class="countdown-unit">${diff === 1 ? 'day' : 'days'} until departure</div>
         <div class="offtrip-title" style="margin-top:20px">Trip hasn't started yet!</div>
-        <div class="offtrip-sub">You leave for Malaysia on <b>Saturday, 13 June 2026</b>.<br>Check the Full Plan tab to prepare.</div>
+        <div class="offtrip-sub">You leave for Malaysia on <b>Saturday, 13 June 2026</b>.<br>${allDone ? '🎉 All packed! Tap below to see Day 1.' : 'Tick off everything below to unlock Day 1.'}</div>
+      </div>
+      <div style="padding:0 16px 24px;max-width:480px;margin:0 auto">
+        <div class="packing-section">
+          <div class="packing-header">
+            <div class="packing-header-icon">${allDone ? '✅' : '🎒'}</div>
+            <div>
+              <div class="packing-header-text">${allDone ? 'All Packed!' : 'Packing Checklist'}</div>
+              <div class="packing-header-sub">${allDone ? 'Everything\'s ready to go' : 'Complete to unlock your Day 1 itinerary'}</div>
+            </div>
+          </div>
+          <div class="packing-list">${packingListHtml}</div>
+          <div class="packing-progress">
+            <div class="packing-prog-bar"><div class="packing-prog-fill" style="width:${pct}%"></div></div>
+            <div class="packing-prog-text">${checkedCount}/${packingItems.length} packed</div>
+          </div>
+          ${day1Btn}
+        </div>
       </div>`;
     return;
   }
