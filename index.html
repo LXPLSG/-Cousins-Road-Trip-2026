@@ -272,12 +272,11 @@ const TRIP = [
       label:"Option 2", sublabel:"TRX Mall Day",
       acts:[
         {time:"8:30 am",title:"Nasi Lemak breakfast",detail:"<b>Village Park Restaurant</b> (1.5 km, Damansara Uptown) — famous crispy ayam goreng. Same great start as Option 1.",tags:["food"],transport:"grab"},
-        {time:"10:00 am",title:"Arrive The Exchange TRX",detail:"Grab from hotel (~25 min). Head straight up to <b>TRX City Park</b> (Level 3 rooftop) — cooler in the morning before the midday heat. Free entry.",tags:["tip"],transport:"grab"},
-        {time:"10:30 am",title:"TRX City Park — Rooftop Playground",detail:"<b>Play City</b> (kampung-inspired climbing structures, rope bridges — ages 2–12) and <b>Play Cave</b> (cave-like nooks for climbing &amp; exploring). All free. Stroller-friendly with ramps; stroller rental and nursing room on-site for the 1-yr-old.",tags:["activity","kids"]},
+        {time:"10:00 am",title:"Arrive The Exchange TRX",detail:"Grab from hotel (~25 min). Malaysia's newest lifestyle destination.",tags:["tip"],transport:"grab"},
+        {time:"10:30 am",title:"Mall Exploration",detail:"Malaysia's first <b>Apple Store</b>, the <b>Seibu/Nojima</b> Japanese department store, fashion &amp; lifestyle brands. Adults browse while kids rest up.",tags:["shopping"]},
         {time:"12:30 pm",title:"Lunch at TRX",detail:"Three great options: <b>Samtai YAMCH'A</b> — dim sum + Nasi Lemak Fried Chicken &amp; Mee Tarik (kids-friendly) · <b>Zok Noodle House</b> — HK/Macau-style wonton noodles &amp; dim sum · <b>Food Exchange food court</b> — widest variety, budget-friendly, includes Rasa Penang stall.",tags:["food"]},
-        {time:"2:00 pm",title:"Mall Exploration",detail:"Malaysia's first <b>Apple Store</b>, the <b>Seibu/Nojima</b> Japanese department store, fashion &amp; lifestyle brands. Adults browse while kids rest up after the morning.",tags:["shopping"]},
-        {time:"3:30 pm",title:"Kidzooona — Indoor Kids' Play",detail:"Indoor activity zone with role-play stations: mini supermarket, dress-up &amp; makeup, fishing games, colouring corners. Fully air-conditioned. Paid entry, ages 1–8. <b>⚠️ Tip: confirm Kidzooona is still operating before the trip.</b>",tags:["activity","kids"]},
-        {time:"5:30 pm",title:"TRX City Park — Evening",detail:"Return to the rooftop for the late afternoon — cooler weather, golden hour light, panoramic KL skyline views. Great family photos with the Petronas Twin Towers and Exchange 106 in the background.",tags:["sights","kids"]},
+        {time:"2:00 pm",title:"Kidzooona — Indoor Kids' Play",detail:"Indoor activity zone with role-play stations: mini supermarket, dress-up &amp; makeup, fishing games, colouring corners. Fully air-conditioned. Paid entry, ages 1–8. <b>⚠️ Tip: confirm Kidzooona is still operating before the trip.</b>",tags:["activity","kids"]},
+        {time:"5:30 pm",title:"Free Time / Remaining Shops",detail:"Browse at your own pace. Good time for a coffee break before dinner.",tags:["shopping"]},
         {time:"7:00 pm",title:"Dinner at TRX",detail:"<b>Two Sons Bistro</b> — famous chilli clams &amp; mussels in 16 flavours, great for a group. Or <b>Hai Kah Lang</b> for live seafood &amp; chilli crab (splurge). Alternatively, Grab 10 min to <b>Jalan Alor</b> hawker street.",tags:["food"]}
       ]
     },
@@ -316,11 +315,12 @@ const TRIP = [
     },
     warns:["⚠️ SkyWorlds Outdoor Theme Park is CLOSED every Tuesday. Drive your own cars to Awana Skyway — Grab is unreliable at Genting, especially for return trips."],
     acts:[
-      {time:"10:00 am",title:"Awana Skyway Cable Car",detail:"Scenic gondola ride with stunning mountain views. Toddler-friendly. <b>Drive your own cars</b> to Awana station — Grab unreliable here.",tags:["activity","kids"],transport:"drive-rec"},
-      {time:"12:00 pm",title:"Chin Swee Caves Temple",detail:"Only 600m walk from Antara! Beautiful pagoda with panoramic highland views. Great photo stop.",tags:["sights"],transport:"walk"},
-      {time:"2:00 pm",title:"Skytropolis Indoor Theme Park",detail:"7-min walk from hotel. All ages welcome — gentle rides for toddlers, arcade games for older kids.",tags:["activity","kids"],transport:"walk"},
-      {time:"5:00 pm",title:"Sky Avenue Mall",detail:"Warm up with hot drinks. Browse outlet stores and shops.",tags:["shopping"],transport:"walk"},
-      {time:"7:30 pm",title:"Dinner + Karaoke",detail:"Dinner at Sky Avenue food hall. Use the hotel's karaoke rooms after for a great group night in!",tags:["food"],transport:"walk"}
+      {time:"9:30 am",title:"Genting Highlands Premium Outlets",detail:"~10-min walk from Antara. Over 150 international brands at outlet prices — Coach, Michael Kors, Adidas, Nike and more. Great for adults while the toddler rides in the stroller. Wrap up by 11:30 am.",tags:["shopping"],transport:"walk"},
+      {time:"12:00 pm",title:"Awana Skyway Cable Car",detail:"Scenic gondola ride with stunning mountain views. Toddler-friendly. <b>Drive your own cars</b> to Awana station — Grab unreliable here. Arrive by noon before crowds build.",tags:["activity","kids"],transport:"drive-rec"},
+      {time:"2:00 pm",title:"Chin Swee Caves Temple",detail:"Only 600m walk from Antara! Beautiful pagoda with panoramic highland views. Great photo stop.",tags:["sights"],transport:"walk"},
+      {time:"3:30 pm",title:"Skytropolis Indoor Theme Park",detail:"7-min walk from hotel. All ages welcome — gentle rides for toddlers, arcade games for older kids.",tags:["activity","kids"],transport:"walk"},
+      {time:"5:30 pm",title:"Sky Avenue Mall",detail:"Warm up with hot drinks. Browse remaining outlet stores and shops.",tags:["shopping"],transport:"walk"},
+      {time:"7:30 pm",title:"Dinner at Sky Avenue",detail:"Relaxed group dinner at the Sky Avenue food hall — good variety of local and international options for all ages.",tags:["food"],transport:"walk"}
     ]
   },
   {
@@ -334,7 +334,8 @@ const TRIP = [
       {time:"12:30 pm",title:"Adults' Turn",detail:"Split into groups — adults take turns on <b>Eagle Mountain</b> roller coaster and Andromeda Base while others stay with the kids.",tags:["activity"]},
       {time:"1:30 pm",title:"Lunch in the Park",detail:"Themed dining areas throughout SkyWorlds. Pack snacks and puree for the 1-yr-old.",tags:["food","kids"]},
       {time:"3:00 pm",title:"Live Shows & Parades",detail:"Catch a street show or parade — great for the little ones and a breather from rides.",tags:["kids"]},
-      {time:"6:00 pm",title:"Park Closes — Walk Back",detail:"Stroll the 700m back to Antara. Early night recommended — big drive to Melaka tomorrow.",tags:["tip"],transport:"walk"}
+      {time:"6:00 pm",title:"Park Closes — Walk Back",detail:"Stroll the 700m back to Antara. Quick freshen up before dinner.",tags:["tip"],transport:"walk"},
+      {time:"7:00 pm",title:"Dinner at Resorts World Food Street",detail:"Level 1, Sky Avenue — hawker-style spread with local favourites. Good variety for the whole group, kid-friendly, and just a short walk from Antara.",tags:["food"],transport:"walk"}
     ]
   },
   {
@@ -369,11 +370,12 @@ const TRIP = [
     warns:[],
     acts:[
       {time:"9:00 am",title:"Breakfast at Courtyard Café",detail:"Hotel buffet breakfast. Fuel up before a packed day.",tags:["food"],transport:"walk"},
-      {time:"10:00 am",title:"Dutch Square + Trishaw Ride",detail:"<b>Christ Church, Stadthuys</b> (red buildings) — steps from the hotel. Book <b>2–3 trishaws</b> decorated with lights and music. Kids will love it!",tags:["sights","kids"],transport:"walk"},
-      {time:"11:30 am",title:"A Famosa + Upside Down House",detail:"<b>A Famosa</b> (16th-century Portuguese fort ruins) is walkable. <b>Upside Down House</b> nearby — inverted home with gravity-defying props. Great family photos!",tags:["sights","activity","kids"],transport:"walk"},
-      {time:"1:00 pm",title:"Lunch",detail:"Chicken rice balls again, or <b>Nyonya Delights</b> for authentic Peranakan home cooking.",tags:["food"],transport:"walk"},
-      {time:"2:30 pm",title:"Shore Oceanarium",detail:"At The Shore Shopping Gallery (~3 km from hotel). Marine exhibits, great for all 3 kids. Adults can browse the mall.",tags:["activity","kids","shopping"],transport:"grab"},
-      {time:"5:00 pm",title:"Melaka River Cruise",detail:"45-minute boat ride past heritage shophouses, murals, and bridges. Beautiful at dusk. Leave stroller at shore.",tags:["activity"],transport:"walk"},
+      {time:"10:00 am",title:"Shore Oceanarium",detail:"Grab to The Shore Shopping Gallery (~3 km). Air-conditioned marine exhibits — great for all 3 kids to start the day cool. Adults can browse the mall.",tags:["activity","kids","shopping"],transport:"grab"},
+      {time:"12:30 pm",title:"Lunch",detail:"Chicken rice balls near Jonker Street, or <b>Nyonya Delights</b> for authentic Peranakan home cooking.",tags:["food"],transport:"walk"},
+      {time:"1:30 pm",title:"Rest Break",detail:"Back at the hotel — nap time for the 1-yr-old. Recharge before the afternoon outdoor stretch.",tags:["kids"],transport:"walk"},
+      {time:"2:30 pm",title:"Dutch Square + Trishaw Ride",detail:"<b>Christ Church, Stadthuys</b> (red buildings) — steps from the hotel. Book <b>2–3 trishaws</b> decorated with lights and music. Cooler in the afternoon and more atmospheric for photos.",tags:["sights","kids"],transport:"walk"},
+      {time:"3:30 pm",title:"A Famosa + Upside Down House",detail:"<b>A Famosa</b> (16th-century Portuguese fort ruins) is walkable. <b>Upside Down House</b> nearby — inverted home with gravity-defying props. Great family photos!",tags:["sights","activity","kids"],transport:"walk"},
+      {time:"5:00 pm",title:"Melaka River Cruise",detail:"45-minute boat ride past heritage shophouses, murals, and bridges. Beautiful at dusk — perfect timing after the afternoon heritage walk. Leave stroller at shore.",tags:["activity"],transport:"walk"},
       {time:"6:30 pm",title:"Tan Kim Hock — Souvenirs",detail:"100+ local products: dodol, coconut candy, gula melaka, sambal. Durian cendol stall outside. Stock up before heading home tomorrow!",tags:["shopping","food"],transport:"walk"},
       {time:"8:00 pm",title:"Dinner",detail:"",isDinner:true,tags:["food"],
         dinnerOpts:[
