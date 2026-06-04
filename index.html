@@ -384,8 +384,10 @@ const TRIP = [
     n:7, date:"2026-06-19", short:"Fri 19 Jun", full:"Friday, 19 June 2026",
     title:"Best of Melaka — Full Day", dest:"melaka", destLabel:"Melaka",
     hotel:"Courtyard by Marriott Melaka",
-    route:{type:"warn", title:"Drive needed · Lucky Palace dinner only",
+    route:{type:"warn", title:"Drive needed · Gugu House + Lucky Palace dinner",
       segs:[
+        {from:"Current Location",to:"Gugu House",meta:"~5 km · ~10 min",waze:"https://waze.com/ul?q=6+Jln+SJ+1%2F6+Taman+Seri+Jati+Batu+Berendam+75350+Melaka&navigate=yes"},
+        {from:"Gugu House",to:"Courtyard Melaka",meta:"~5 km · ~10 min",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"},
         {from:"Courtyard Melaka",to:"Lucky Palace Restaurant",meta:"~10 km · ~15 min",waze:"https://waze.com/ul?ll=2.2511,102.2895&navigate=yes"},
         {from:"Lucky Palace",to:"Back to Courtyard Melaka",meta:"~10 km · ~15 min",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"}
       ]
@@ -399,6 +401,7 @@ const TRIP = [
       {time:"2:30 pm",title:"Dutch Square + Trishaw Ride",detail:"<b>Christ Church, Stadthuys</b> (red buildings) — steps from the hotel. Book <b>2–3 trishaws</b> decorated with lights and music. Cooler in the afternoon and more atmospheric for photos.",tags:["sights","kids"],transport:"walk"},
       {time:"3:30 pm",title:"A Famosa + Upside Down House",detail:"<b>A Famosa</b> (16th-century Portuguese fort ruins) is walkable. <b>Upside Down House</b> nearby — inverted home with gravity-defying props. Great family photos!",tags:["sights","activity","kids"],transport:"walk"},
       {time:"5:00 pm",title:"Melaka River Cruise",detail:"45-minute boat ride past heritage shophouses, murals, and bridges. Beautiful at dusk — perfect timing after the afternoon heritage walk. Leave stroller at shore.",tags:["activity"],transport:"walk"},
+      {time:"6:00 pm",title:"Visit Gugu",detail:"Drop by Gugu House for a visit.",waze:{to:"https://waze.com/ul?q=6+Jln+SJ+1%2F6+Taman+Seri+Jati+Batu+Berendam+75350+Melaka&navigate=yes",back:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes",toLabel:"To Gugu House"},tags:[],transport:"drive"},
       {time:"6:30 pm",title:"Tan Kim Hock — Souvenirs",detail:"100+ local products: dodol, coconut candy, gula melaka, sambal. Durian cendol stall outside. Stock up before heading home tomorrow!",tags:["shopping","food"],transport:"walk"},
       {time:"8:00 pm",title:"Dinner",detail:"",isDinner:true,tags:["food"],
         dinnerOpts:[
