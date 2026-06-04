@@ -327,16 +327,19 @@ const TRIP = [
     n:4, date:"2026-06-16", short:"Tue 16 Jun", full:"Tuesday, 16 June 2026",
     title:"Genting — Alternatives Day", dest:"genting", destLabel:"Genting Highlands",
     hotel:"Antara by Harvinton Mansion, Genting",
-    route:{type:"warn", title:"Drive needed · Awana Skyway only",
+    route:{type:"warn", title:"Drive needed · Breakfast + Awana Skyway",
       segs:[
+        {from:"Antara Genting",to:"Good Friends Restaurant (Maxims)",meta:"~2.5 km · ~5 min",waze:"https://waze.com/ul?q=Good+Friends+Restaurant+Maxims+Genting+Highlands&navigate=yes"},
+        {from:"Good Friends Restaurant",to:"Back to Antara Genting",meta:"~2.5 km · ~5 min",waze:"https://waze.com/ul?ll=3.4211,101.7942&navigate=yes"},
         {from:"Antara Genting",to:"Awana Skyway Station",meta:"~3 km · ~8 min",waze:"https://waze.com/ul?q=Awana+Skyway+Genting+Highlands&navigate=yes"},
         {from:"Awana Skyway",to:"Back to Antara Genting",meta:"~3 km · ~8 min",waze:"https://waze.com/ul?ll=3.4211,101.7942&navigate=yes"}
       ]
     },
     warns:["⚠️ SkyWorlds Outdoor Theme Park is CLOSED every Tuesday. Drive your own cars to Awana Skyway — Grab is unreliable at Genting, especially for return trips."],
     acts:[
+      {time:"8:00 am",title:"Breakfast — Good Friends Restaurant (好友记)",detail:"A Genting institution for morning dim sum — har gau, siew mai, char siew bao, and porridge. Located at <b>Level 2, Maxims Hotel</b> (Resorts World Genting). Opens 6:30 am. <b>Drive your own cars — ~5 min, 2.5 km from Antara.</b> Go early; popular dim sum items sell out fast. Dim sum ends around noon.",waze:{to:"https://waze.com/ul?q=Good+Friends+Restaurant+Maxims+Genting+Highlands&navigate=yes",back:"https://waze.com/ul?ll=3.4211,101.7942&navigate=yes"},contact:"📞 +60 3-6101 1118 · Level 2, Maxims, Resorts World Genting · Hours: 6:30 am – 3:00 pm",tags:["food","kids"],transport:"drive-rec"},
       {time:"9:30 am",title:"Genting Highlands Premium Outlets",detail:"~10-min walk from Antara. Over 150 international brands at outlet prices — Coach, Michael Kors, Adidas, Nike and more. Great for adults while the toddler rides in the stroller. Wrap up by 11:30 am.",tags:["shopping"],transport:"walk"},
-      {time:"12:00 pm",title:"Awana Skyway Cable Car",detail:"Scenic gondola ride with stunning mountain views. Toddler-friendly. <b>Drive your own cars</b> to Awana station — Grab unreliable here. Arrive by noon before crowds build.",tags:["activity","kids"],transport:"drive-rec"},
+      {time:"12:00 pm",title:"Awana Skyway Cable Car",detail:"Scenic gondola ride with stunning mountain views. Toddler-friendly. <b>Drive your own cars</b> to Awana station — Grab unreliable here. Arrive by noon before crowds build.",waze:{to:"https://waze.com/ul?q=Awana+Skyway+Genting+Highlands&navigate=yes",back:"https://waze.com/ul?ll=3.4211,101.7942&navigate=yes",toLabel:"To Attraction"},tags:["activity","kids"],transport:"drive-rec"},
       {time:"2:00 pm",title:"Chin Swee Caves Temple",detail:"Only 600m walk from Antara! Beautiful pagoda with panoramic highland views. Great photo stop.",tags:["sights"],transport:"walk"},
       {time:"3:30 pm",title:"Skytropolis Indoor Theme Park",detail:"7-min walk from hotel. All ages welcome — gentle rides for toddlers, arcade games for older kids.",tags:["activity","kids"],transport:"walk"},
       {time:"5:30 pm",title:"Sky Avenue Mall",detail:"Warm up with hot drinks. Browse remaining outlet stores and shops.",tags:["shopping"],transport:"walk"},
@@ -532,6 +535,7 @@ function renderPlan() {
       if (a.contact) h += `<div class="act-contact">${a.contact}</div>`;
       if (a.isDinner && a.dinnerOpts) h += dinnerOptsHTML(a.dinnerOpts, false);
       h += tagHTML(a.tags, a.transport);
+      if (a.waze) h += `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap"><a class="waze-btn" href="${a.waze.to}" target="_blank">📍 ${a.waze.toLabel||'To Restaurant'}</a><a class="waze-btn" href="${a.waze.back}" target="_blank">📍 Back to Hotel</a></div>`;
       h += '</div></div>';
     });
     h += '</div>';
@@ -703,6 +707,7 @@ function renderToday() {
             h += dinnerOptsHTML(a.dinnerOpts, true);
           }
           h += tagHTML(a.tags, a.transport);
+      if (a.waze) h += `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap"><a class="waze-btn" href="${a.waze.to}" target="_blank">📍 ${a.waze.toLabel||'To Restaurant'}</a><a class="waze-btn" href="${a.waze.back}" target="_blank">📍 Back to Hotel</a></div>`;
           h += '</div></div>';
         });
         h += '</div>';
@@ -891,6 +896,7 @@ function renderToday() {
         h += dinnerOptsHTML(a.dinnerOpts, true);
       }
       h += tagHTML(a.tags, a.transport);
+      if (a.waze) h += `<div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap"><a class="waze-btn" href="${a.waze.to}" target="_blank">📍 ${a.waze.toLabel||'To Restaurant'}</a><a class="waze-btn" href="${a.waze.back}" target="_blank">📍 Back to Hotel</a></div>`;
       h += '</div></div>';
     });
     h += '</div>';
