@@ -256,10 +256,11 @@ const TRIP = [
     n:1, date:"2026-06-13", short:"Sat 13 Jun", full:"Saturday, 13 June 2026",
     title:"Singapore → Kuala Lumpur", dest:"drive", destLabel:"Drive Day",
     hotel:"Somerset Damansara Uptown, PJ",
-    route:{type:"nav", title:"Route Navigation · Start from Tuas Checkpoint",
+    route:{type:"nav", title:"Route Navigation · Day 1 Waze Buttons",
       segs:[
-        {from:"Tuas Checkpoint",to:"Tangkak",stop:true,stopLabel:"Breakfast",meta:"~200 km · ~2.5 hrs",waze:"https://waze.com/ul?ll=2.2672,102.5543&navigate=yes"},
-        {from:"Tangkak",to:"Somerset Damansara PJ",meta:"~180 km · ~1.5 hrs",waze:"https://waze.com/ul?ll=3.1376,101.6217&navigate=yes"}
+        {from:"Current Location",to:"PETRONAS Northbound Gelang Patah Utara (Jabal Heqma)",stop:true,stopLabel:"Part 1",meta:"First petrol stop",waze:"https://waze.com/ul?q=PETRONAS%20Northbound%20Gelang%20Patah%20Utara%20Jabal%20Heqma&navigate=yes"},
+        {from:"PETRONAS Northbound Gelang Patah Utara",to:"FamilyMart Tangkak",stop:true,stopLabel:"Part 2",meta:"Snack / rest stop",waze:"https://waze.com/ul?q=FamilyMart%20Tangkak&navigate=yes"},
+        {from:"Current Location",to:"Somerset Petaling Jaya",stop:true,stopLabel:"Part 3",meta:"Hotel destination",waze:"https://waze.com/ul?q=Somerset%20Damansara%20Uptown%20Petaling%20Jaya&navigate=yes"}
       ]
     },
     warns:[],
@@ -384,12 +385,14 @@ const TRIP = [
     n:7, date:"2026-06-19", short:"Fri 19 Jun", full:"Friday, 19 June 2026",
     title:"Best of Melaka — Full Day", dest:"melaka", destLabel:"Melaka",
     hotel:"Courtyard by Marriott Melaka",
-    route:{type:"warn", title:"Drive needed · Gugu House + Lucky Palace dinner",
+    route:{type:"warn", title:"Drive needed · Gugu House + Dinner Options",
       segs:[
         {from:"Current Location",to:"Gugu House",meta:"~5 km · ~10 min",waze:"https://waze.com/ul?q=6+Jln+SJ+1%2F6+Taman+Seri+Jati+Batu+Berendam+75350+Melaka&navigate=yes"},
         {from:"Gugu House",to:"Courtyard Melaka",meta:"~5 km · ~10 min",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"},
-        {from:"Courtyard Melaka",to:"Lucky Palace Restaurant",meta:"~10 km · ~15 min",waze:"https://waze.com/ul?ll=2.2511,102.2895&navigate=yes"},
-        {from:"Lucky Palace",to:"Back to Courtyard Melaka",meta:"~10 km · ~15 min",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"}
+        {from:"Courtyard Melaka",to:"The Kam Cheng",stop:true,stopLabel:"Option 1",meta:"Dinner option · Kota Syahbandar",waze:"https://waze.com/ul?q=The%20Kam%20Cheng%201%20Jln%20KSB%201%20Taman%20Kota%20Syahbandar%2075200%20Melaka%20Malaysia&navigate=yes"},
+        {from:"The Kam Cheng",to:"Back to Courtyard Melaka",meta:"Return to hotel",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"},
+        {from:"Courtyard Melaka",to:"Peranakan Mansion 108",stop:true,stopLabel:"Option 2",meta:"Dinner option · Jalan Tun Tan Cheng Lock",waze:"https://waze.com/ul?q=Peranakan%20Mansion%20108%20Jalan%20Tun%20Tan%20Cheng%20Lock%20Melaka&navigate=yes"},
+        {from:"Peranakan Mansion 108",to:"Back to Courtyard Melaka",meta:"Return to hotel",waze:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"}
       ]
     },
     warns:[],
@@ -403,10 +406,10 @@ const TRIP = [
       {time:"5:00 pm",title:"Melaka River Cruise",detail:"45-minute boat ride past heritage shophouses, murals, and bridges. Beautiful at dusk — perfect timing after the afternoon heritage walk. Leave stroller at shore.",tags:["activity"],transport:"walk"},
       {time:"6:00 pm",title:"Visit Gugu",detail:"Drop by Gugu House for a visit.",waze:{to:"https://waze.com/ul?q=6+Jln+SJ+1%2F6+Taman+Seri+Jati+Batu+Berendam+75350+Melaka&navigate=yes",back:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes",toLabel:"To Gugu House"},tags:[],transport:"drive"},
       {time:"6:30 pm",title:"Tan Kim Hock — Souvenirs",detail:"100+ local products: dodol, coconut candy, gula melaka, sambal. Durian cendol stall outside. Stock up before heading home tomorrow!",tags:["shopping","food"],transport:"walk"},
-      {time:"8:00 pm",title:"Dinner",detail:"",isDinner:true,tags:["food"],
+      {time:"8:00 pm",title:"Dinner — Choose 1 of 2",detail:"Tap each option to expand details and Waze navigation.",isDinner:true,tags:["food"],
         dinnerOpts:[
-          {a:true,title:"Lucky Palace Restaurant",rec:"Best for elderlies",detail:"Chinese fine dining · Grand setting with chandeliers · Banquet menu · ~10 min drive · Use your own 3 cars from the hotel garage.",driveNote:"Drive your own cars. 10 pax + 10pm Friday return = don't risk Grab. Lucky Palace has ample parking.",contact:"📞 +60 6-253 0000 · 1, Jalan Sri Rama 1, Taman Muzaffar Shah, Ayer Keroh · Book ahead!",wazeNote:true},
-          {a:false,title:"Nyonya cuisine",detail:"Nancy's Kitchen or Nyonya Makke — authentic Peranakan farewell meal. Walkable from the hotel."}
+          {a:true,title:"The Kam Cheng",rec:"Option 1",detail:"Peranakan / Nyonya dinner option in Kota Syahbandar. Good choice for a sit-down Melaka dinner after visiting Gugu and returning to the hotel.",driveNote:"Use your own cars from Courtyard Melaka. Keep this as the first dinner choice if the group prefers a larger, comfortable dinner stop.",contact:"📍 1, Jln KSB 1, Taman Kota Syahbandar, 75200 Melaka, Malaysia",waze:"https://waze.com/ul?q=The%20Kam%20Cheng%201%20Jln%20KSB%201%20Taman%20Kota%20Syahbandar%2075200%20Melaka%20Malaysia&navigate=yes",back:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"},
+          {a:false,title:"Peranakan Mansion 108",rec:"Option 2",detail:"Peranakan dinner option in the heritage area on Jalan Tun Tan Cheng Lock. Better if the group wants a dinner stop closer to Jonker / old-town Melaka vibes.",driveNote:"Use your own cars or check Grab availability from Courtyard. Parking can be tighter in the heritage area, especially Friday night.",contact:"📍 108, Jalan Tun Tan Cheng Lock, Melaka",waze:"https://waze.com/ul?q=Peranakan%20Mansion%20108%20Jalan%20Tun%20Tan%20Cheng%20Lock%20Melaka&navigate=yes",back:"https://waze.com/ul?ll=2.1965,102.2483&navigate=yes"}
         ]
       }
     ]
@@ -496,17 +499,35 @@ function routeBoxHTML(route, size) {
 }
 
 function dinnerOptsHTML(opts, big) {
-  let h = big ? '<div class="today-dinner-wrap">' : '<div class="dinner-wrap">';
-  opts.forEach(o => {
-    if (o.a) {
-      h += big
-        ? `<div class="td-opt td-opt-a"><div class="td-opt-title">Option A — ${o.title} <span class="d-rec">${o.rec}</span></div><div class="td-opt-detail">${o.detail}</div><div class="td-drive-note"><span>⚠️</span><div>${o.driveNote}</div></div><div style="margin-top:8px;font-size:12px;color:#065F46">${o.contact}</div></div>`
-        : `<div class="d-opt d-opt-a"><div class="d-opt-title">Option A — ${o.title} <span class="d-rec">${o.rec}</span></div>${o.detail}<div class="d-drive-note"><span>⚠️</span><div>${o.driveNote}</div></div><div style="margin-top:6px;font-size:11px;color:#065F46">${o.contact}</div></div>`;
-    } else {
-      h += big
-        ? `<div class="td-opt td-opt-b"><div class="td-opt-title">Option B — ${o.title}</div><div class="td-opt-detail">${o.detail} <span class="tag t-walk">🚶 Walk</span></div></div>`
-        : `<div class="d-opt d-opt-b"><b>Option B — ${o.title}</b><br>${o.detail} <span class="tag t-walk">🚶 Walk</span></div>`;
-    }
+  const prefix = big ? 'td-dinner' : 'fp-dinner';
+  let h = `<div class="${big ? 'today-dinner-wrap' : 'dinner-wrap'}">`;
+  h += `<div class="opt-toggle" style="margin:8px 0 10px">`;
+  opts.forEach((o, idx) => {
+    const k = idx === 0 ? 'a' : 'b';
+    const optLabel = o.rec || (idx === 0 ? 'Option 1' : 'Option 2');
+    h += `<button class="opt-btn ${idx === 0 ? 'active' : ''}" id="${prefix}-btn-${k}" onclick="switchDinnerOpt('${prefix}','${k}')">
+      ${optLabel}<br><span class="opt-badge ${idx === 0 ? 'opt-badge-orig' : 'opt-badge-trx'}">${o.title}</span>
+    </button>`;
+  });
+  h += `</div>`;
+
+  opts.forEach((o, idx) => {
+    const k = idx === 0 ? 'a' : 'b';
+    const optLabel = o.rec || (idx === 0 ? 'Option 1' : 'Option 2');
+    const panelCls = idx === 0 ? 'active' : '';
+    const detailCls = big ? 'td-opt-detail' : '';
+    const noteCls = big ? 'td-drive-note' : 'd-drive-note';
+    const cardCls = idx === 0 ? (big ? 'td-opt td-opt-a' : 'd-opt d-opt-a') : (big ? 'td-opt td-opt-b' : 'd-opt d-opt-b');
+    const navBtns = o.waze ? `<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><a class="waze-btn" href="${o.waze}" target="_blank">📍 Navigate to ${o.title}</a>${o.back ? `<a class="waze-btn" href="${o.back}" target="_blank">📍 Back to Hotel</a>` : ''}</div>` : '';
+    h += `<div class="opt-panel ${panelCls}" id="${prefix}-panel-${k}">
+      <div class="${cardCls}">
+        <div class="${big ? 'td-opt-title' : 'd-opt-title'}">${optLabel} — ${o.title}</div>
+        <div class="${detailCls}" style="margin-top:6px">${o.detail}</div>
+        ${o.driveNote ? `<div class="${noteCls}"><span>⚠️</span><div>${o.driveNote}</div></div>` : ''}
+        ${o.contact ? `<div style="margin-top:6px;font-size:${big ? '12px' : '11px'};color:#065F46">${o.contact}</div>` : ''}
+        ${navBtns}
+      </div>
+    </div>`;
   });
   h += '</div>';
   return h;
@@ -644,6 +665,15 @@ function switchOpt(n, which) {
   ['a','b'].forEach(k => {
     document.getElementById(`opt-${k}-${n}`).classList.toggle('active', k === which);
     document.getElementById(`btn-${k}-${n}`).classList.toggle('active', k === which);
+  });
+}
+
+function switchDinnerOpt(prefix, which) {
+  ['a','b'].forEach(k => {
+    const panel = document.getElementById(`${prefix}-panel-${k}`);
+    const btn = document.getElementById(`${prefix}-btn-${k}`);
+    if (panel) panel.classList.toggle('active', k === which);
+    if (btn) btn.classList.toggle('active', k === which);
   });
 }
 
