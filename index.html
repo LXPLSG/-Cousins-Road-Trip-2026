@@ -230,7 +230,36 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .exp-split-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:170px;overflow:auto;border:1px solid var(--border);border-radius:12px;padding:10px;background:#F8FAFC}.exp-check{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600}.exp-check input{width:auto}.exp-settlement{border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}.exp-paynow{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;color:var(--muted)}
 .exp-modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-end;justify-content:center;z-index:400;padding:16px}.exp-modal.open{display:flex}.exp-dialog{background:#fff;border-radius:18px;width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 24px 80px rgba(15,23,42,.28)}.exp-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;border-bottom:1px solid var(--border)}.exp-dialog-head h2{font-size:17px;margin:0;color:var(--navy)}.exp-close{border:none;background:#F1F5F9;border-radius:10px;width:34px;height:34px;cursor:pointer}.exp-dialog-body{padding:16px}.exp-dialog-foot{display:flex;gap:10px;padding:14px 16px 16px;border-top:1px solid var(--border)}.exp-dialog-foot button{flex:1}
 .exp-toast{position:fixed;right:16px;bottom:82px;background:var(--navy);color:white;padding:10px 12px;border-radius:12px;font-size:13px;opacity:0;transform:translateY(8px);transition:.2s;z-index:500}.exp-toast.show{opacity:1;transform:translateY(0)}
-@media(max-width:560px){.exp-row{flex-direction:column;align-items:stretch}.exp-metric-row{grid-template-columns:1fr}.exp-split-options{grid-template-columns:1fr}.exp-option-grid{grid-template-columns:1fr}.bottom-nav .nav-btn{font-size:10px;padding-left:4px;padding-right:4px}.exp-dialog{max-height:92vh}}
+
+
+/* Expense tracker mobile polish */
+*{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+.exp-page{width:100%;padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+.today-action-bar{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+.exp-primary-btn,.exp-soft-btn,.exp-danger-btn,.exp-ghost-btn,.exp-option-card,.exp-menu-item,.burger-btn,.exp-close{min-height:44px;touch-action:manipulation}
+.exp-field input,.exp-field select{min-height:44px;font-size:16px}
+.exp-table-wrap{max-width:100%;-webkit-overflow-scrolling:touch}
+.exp-table{min-width:620px}
+.exp-summary-note{margin-top:10px}
+
+@media(max-width:560px){
+  .app-header{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
+  .header-row{gap:8px}.header-main{gap:8px}.header-title{font-size:15px;line-height:1.2}.header-flag{font-size:18px}.burger-btn{width:44px;height:44px;border-radius:14px}
+  .today-action-bar{padding-top:10px;justify-content:stretch}.today-action-bar .exp-primary-btn{width:100%}
+  .exp-page{padding-top:12px}.exp-grid{gap:10px}.exp-card{padding:14px;border-radius:14px}.exp-card h2{font-size:16px;margin-bottom:10px}
+  .exp-row{flex-direction:column;align-items:stretch}.exp-row>*{width:100%}
+  .exp-metric-row{grid-template-columns:1fr 1fr;gap:8px}.exp-metric{padding:10px}.exp-metric-label{font-size:9px;line-height:1.25}.exp-metric-value{font-size:17px;line-height:1.2;word-break:break-word}
+  .exp-option-grid{grid-template-columns:1fr 1fr;gap:8px}.exp-option-card{padding:12px}.exp-option-title{font-size:14px}.exp-option-sub{font-size:11px}
+  .exp-split-options{grid-template-columns:1fr;max-height:220px}.exp-actions{display:grid;grid-template-columns:1fr;gap:8px}.exp-actions button{width:100%}
+  .exp-table{min-width:0;border-collapse:separate;border-spacing:0 10px}.exp-table thead{display:none}.exp-table,.exp-table tbody,.exp-table tr,.exp-table td{display:block;width:100%}.exp-table tr{border:1px solid var(--border);border-radius:14px;background:#fff;box-shadow:0 4px 12px rgba(15,23,42,.04);overflow:hidden}.exp-table td{display:grid;grid-template-columns:minmax(92px,38%) 1fr;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);align-items:start}.exp-table td:last-child{border-bottom:0}.exp-table td::before{content:attr(data-label);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:800}.exp-table td .exp-danger-btn{width:100%}.exp-money{text-align:right;white-space:normal}
+  .exp-dialog{max-height:92vh;border-radius:18px 18px 0 0}.exp-dialog-body{padding:14px}.exp-dialog-foot{position:sticky;bottom:0;background:#fff;padding-bottom:calc(14px + env(safe-area-inset-bottom))}.exp-modal{padding:0;align-items:flex-end}.exp-toast{left:12px;right:12px;bottom:calc(76px + env(safe-area-inset-bottom));text-align:center}
+  .bottom-nav{padding-bottom:env(safe-area-inset-bottom)}.bottom-nav .nav-btn{font-size:10px;padding-left:4px;padding-right:4px;min-height:56px}
+}
+@media(max-width:380px){
+  .exp-metric-row,.exp-option-grid{grid-template-columns:1fr}.exp-table td{grid-template-columns:1fr;gap:4px}.exp-money{text-align:left}.header-title{font-size:14px}
+}
+
 
 </style>
 </head>
@@ -1288,7 +1317,7 @@ function expRenderTracker(){
     const groups=expSharingGroupsForExpense(e).map(expGroupName).join(', ');
     const scopeText=isPrivate?'Not shared · visible only to paying group':'Shared cost · visible to selected groups';
     const share=expShareForGroup(e,currentGroup);
-    return `<tr><td>${new Date(e.date).toLocaleDateString()}</td><td><b>${expEsc(e.desc)}</b><br><span class="exp-muted">${expEsc(e.type)} · ${scopeText} · ${expEsc(groups||'None')}</span></td><td>${expEsc(expMemberName(e.payerId))}</td><td class="exp-money">${expMoney(e.amount, expCurrency(e))}</td><td class="exp-money">${expMoney(share, expCurrency(e))}</td><td><button class="exp-danger-btn" onclick="expDeleteExpense('${e.id}')">Delete</button></td></tr>`;
+    return `<tr><td data-label="Date">${new Date(e.date).toLocaleDateString()}</td><td data-label="Expense"><b>${expEsc(e.desc)}</b><br><span class="exp-muted">${expEsc(e.type)} · ${scopeText} · ${expEsc(groups||'None')}</span></td><td data-label="Paid by">${expEsc(expMemberName(e.payerId))}</td><td data-label="Amount" class="exp-money">${expMoney(e.amount, expCurrency(e))}</td><td data-label="Your group share" class="exp-money">${expMoney(share, expCurrency(e))}</td><td data-label="Action"><button class="exp-danger-btn" onclick="expDeleteExpense('${e.id}')">Delete</button></td></tr>`;
   };
   const recordsTable=list=>list.length?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Date</th><th>Expense</th><th>Paid by</th><th>Amount</th><th>Your group share</th><th></th></tr></thead><tbody>${list.map(rowFor).join('')}</tbody></table></div>`:'<div class="exp-empty">No expenses visible to your group in this view yet.</div>';
   const involvedGroupIds=[...new Set(sharedExpenses.flatMap(e=>expSharingGroupsForExpense(e)))].sort((a,b)=>a-b);
@@ -1297,14 +1326,14 @@ function expRenderTracker(){
     const members=expState.members.filter(m=>Number(m.groupIndex)===i).map(m=>m.name).join(', ') || 'No members';
     const groupBalances={}; Object.entries(bal).forEach(([c,b])=>{ if(Math.abs((b[i]||0))>0.005) groupBalances[c]=b[i]||0; });
     const firstBal=Object.values(groupBalances)[0] || 0;
-    return `<tr><td>${expEsc(g)}<br><span class="exp-muted">${expEsc(members)}</span></td><td class="exp-money ${firstBal>=0?'exp-pos':'exp-neg'}">${expMoneyList(groupBalances)}</td></tr>`;
+    return `<tr><td data-label="Group">${expEsc(g)}<br><span class="exp-muted">${expEsc(members)}</span></td><td data-label="Settlement balance" class="exp-money ${firstBal>=0?'exp-pos':'exp-neg'}">${expMoneyList(groupBalances)}</td></tr>`;
   }).join('');
   const privateRows=[currentGroup].map(i=>{
     const g=expGroupName(i);
     const groupPrivate=privateExpenses.filter(e=>expPrivateGroupForExpense(e)===i);
     const groupTotal=expTotalsByCurrency(groupPrivate);
     const members=expState.members.filter(m=>Number(m.groupIndex)===i).map(m=>m.name).join(', ') || 'No members';
-    return `<tr><td>${expEsc(g)}<br><span class="exp-muted">${expEsc(members)}</span></td><td class="exp-money">${expMoneyList(groupTotal)}</td><td>${groupPrivate.length}</td></tr>`;
+    return `<tr><td data-label="Group">${expEsc(g)}<br><span class="exp-muted">${expEsc(members)}</span></td><td data-label="Not-shared total" class="exp-money">${expMoneyList(groupTotal)}</td><td data-label="Records">${groupPrivate.length}</td></tr>`;
   }).join('');
   const settleHtml=settlements.length?settlements.map(s=>{
     const recipients=expState.members.filter(m=>Number(m.groupIndex)===Number(s.to));
@@ -1313,7 +1342,7 @@ function expRenderTracker(){
   }).join(''):'<div class="exp-empty">No settlement needed yet.</div>';
   const sharedPage=`<div class="exp-card"><h2>Shared Costs</h2><div class="exp-muted">Your group can see shared expenses only when your group is included in the split. The share column shows what your group owes for each expense.</div>${recordsTable(sharedExpenses)}</div><div class="exp-card"><h2>Group Split Summary</h2>${balanceRows?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Group</th><th>Settlement Balance</th></tr></thead><tbody>${balanceRows}</tbody></table></div>`:'<div class="exp-empty">Add groups in the burger menu to start tracking.</div>'}</div><div class="exp-card"><h2>Final Settlement</h2>${settleHtml}</div>`;
   const privatePage=`<div class="exp-card"><h2>Not-Shared Costs</h2><div class="exp-muted">Only the group that paid can see these expenses. They are excluded from final settlement.</div>${recordsTable(privateExpenses)}</div><div class="exp-card"><h2>Actual Expense by Your Group</h2>${privateRows?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Group</th><th>Not-shared total</th><th>Records</th></tr></thead><tbody>${privateRows}</tbody></table></div>`:'<div class="exp-empty">Add groups in the burger menu to start tracking.</div>'}</div>`;
-  el.innerHTML = `<div class="exp-card"><div class="exp-metrics"><div class="exp-metric-row"><div class="exp-metric"><div class="exp-metric-label">Total shared expenses</div><div class="exp-metric-value">${expMoneyList(sharedTotal)}</div></div><div class="exp-metric exp-metric-total"><div class="exp-metric-label">My total expenses</div><div class="exp-metric-value">${expMoneyList(myTotal)}</div></div></div><div class="exp-metric-row"><div class="exp-metric"><div class="exp-metric-label">My share of the shared expenses</div><div class="exp-metric-value">${expMoneyList(sharedShareTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My private expenses</div><div class="exp-metric-value">${expMoneyList(privateTotal)}</div></div></div></div><div class="exp-muted" style="margin-top:10px">My total expenses = my share of the shared expenses + my private expenses. Current user: ${current?expEsc(current.name):'Not selected'} · Current group: ${expEsc(expGroupName(currentGroup))} · Manage users and settings from the burger menu.</div></div><div class="exp-option-grid"><button class="exp-option-card ${view==='shared'?'active':''}" onclick="expSetTrackerView('shared')"><div class="exp-option-title">Shared Costs</div><div class="exp-option-sub">Visible when your group is sharing.</div></button><button class="exp-option-card ${view==='private'?'active':''}" onclick="expSetTrackerView('private')"><div class="exp-option-title">Private Costs</div><div class="exp-option-sub">Visible only to the paying group.</div></button></div>${view==='private'?privatePage:sharedPage}`;
+  el.innerHTML = `<div class="exp-card"><div class="exp-metrics"><div class="exp-metric-row"><div class="exp-metric"><div class="exp-metric-label">Total shared expenses</div><div class="exp-metric-value">${expMoneyList(sharedTotal)}</div></div><div class="exp-metric exp-metric-total"><div class="exp-metric-label">My total expenses</div><div class="exp-metric-value">${expMoneyList(myTotal)}</div></div></div><div class="exp-metric-row"><div class="exp-metric"><div class="exp-metric-label">My share of the shared expenses</div><div class="exp-metric-value">${expMoneyList(sharedShareTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My private expenses</div><div class="exp-metric-value">${expMoneyList(privateTotal)}</div></div></div></div><div class="exp-muted exp-summary-note">My total expenses = my share of the shared expenses + my private expenses. Current user: ${current?expEsc(current.name):'Not selected'} · Current group: ${expEsc(expGroupName(currentGroup))} · Manage users and settings from the burger menu.</div></div><div class="exp-option-grid"><button class="exp-option-card ${view==='shared'?'active':''}" onclick="expSetTrackerView('shared')"><div class="exp-option-title">Shared Costs</div><div class="exp-option-sub">Visible when your group is sharing.</div></button><button class="exp-option-card ${view==='private'?'active':''}" onclick="expSetTrackerView('private')"><div class="exp-option-title">Private Costs</div><div class="exp-option-sub">Visible only to the paying group.</div></button></div>${view==='private'?privatePage:sharedPage}`;
 }
 function expResetAll(){ const pwd=prompt('Enter admin password to reset tracker.'); if(pwd !== EXP_ADMIN_PASSWORD) return alert('Admin password is required to reset tracker.'); if(!confirm('Reset all tracker settings and expenses?')) return; expState={ currency:'MYR', groups:['Car 1','Car 2','Car 3'], members:[], currentMemberId:'', expenses:[] }; localStorage.removeItem(EXP_STORAGE_KEY); localStorage.removeItem(EXP_MYR_MIGRATION_KEY); expRenderSettings(); expRenderWhoAmI(); expRenderTracker(); expToast('Tracker reset'); }
 
