@@ -1129,10 +1129,10 @@ const exp$ = id => document.getElementById(id);
 function expUid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4); }
 function expMoney(n, currency){ return `${(currency || 'MYR').toUpperCase()} ${Number(n||0).toFixed(2)}`; }
 function expCurrency(e){ return String((e && e.currency) || expState.currency || 'MYR').toUpperCase(); }
-function expTotalsByCurrency(list){ const totals={}; (list||[]).forEach(e=>{ const c=expCurrency(e); totals[c]=(totals[c]||0)+Number(e.amount||0); }); return totals; }
-function expShareTotalsByCurrency(list, groupIndex){ const totals={}; (list||[]).forEach(e=>{ const c=expCurrency(e); totals[c]=(totals[c]||0)+expShareForGroup(e, groupIndex); }); return totals; }
-function expAddCurrencyTotals(){ const out={}; Array.from(arguments).forEach(t=>{ Object.entries(t||{}).forEach(([c,v])=>{ out[c]=(out[c]||0)+Number(v||0); }); }); return out; }
-function expMoneyList(totals, emptyCurrency){ const entries=Object.entries(totals||{}).filter(([,v])=>Math.abs(v)>0.005).sort(([a],[b])=>a.localeCompare(b)); return entries.length ? entries.map(([c,v])=>expMoney(v,c)).join('<br>') : expMoney(0, emptyCurrency || expState.currency || 'MYR'); }
+function expTotalsByCurrency(list){ const cents={}; (list||[]).forEach(e=>{ const c=expCurrency(e); cents[c]=(cents[c]||0)+expCents(e.amount); }); const totals={}; Object.entries(cents).forEach(([c,v])=>{ totals[c]=expAmountFromCents(v); }); return totals; }
+function expShareTotalsByCurrency(list, groupIndex){ const cents={}; (list||[]).forEach(e=>{ const c=expCurrency(e); cents[c]=(cents[c]||0)+expShareCentsForGroup(e, groupIndex); }); const totals={}; Object.entries(cents).forEach(([c,v])=>{ totals[c]=expAmountFromCents(v); }); return totals; }
+function expAddCurrencyTotals(){ const cents={}; Array.from(arguments).forEach(t=>{ Object.entries(t||{}).forEach(([c,v])=>{ cents[c]=(cents[c]||0)+expCents(v); }); }); const out={}; Object.entries(cents).forEach(([c,v])=>{ out[c]=expAmountFromCents(v); }); return out; }
+function expMoneyList(totals, emptyCurrency){ const entries=Object.entries(totals||{}).filter(([,v])=>Math.abs(expCents(v))>0).sort(([a],[b])=>a.localeCompare(b)); return entries.length ? entries.map(([c,v])=>expMoney(v,c)).join('<br>') : expMoney(0, emptyCurrency || expState.currency || 'MYR'); }
 
 function expStableNumber(n){ return Math.round((Number(n)||0)*100)/100; }
 function expStableGroupIds(ids){ return (ids||[]).map(Number).filter(Number.isFinite).sort((a,b)=>a-b); }
@@ -1245,10 +1245,7 @@ function expExpenseVisibleToGroup(e, groupIndex){
   if(scope==='shared') return expGroupsWithShare(e).includes(gid);
   return expPrivateGroupForExpense(e)===gid;
 }
-function expShareForGroup(e, groupIndex){
-  if((e.scope||'private')==='shared') return Number(expGroupSharesForExpense(e)[Number(groupIndex)] || 0);
-  return expPrivateGroupForExpense(e)===Number(groupIndex) ? Number(e.amount||0) : 0;
-}
+function expShareForGroup(e, groupIndex){ return expAmountFromCents(expShareCentsForGroup(e, groupIndex)); }
 function expSharingGroupsForExpense(e){ return (e.scope||'private')==='shared' ? expGroupsWithShare(e) : [expPrivateGroupForExpense(e)]; }
 function expRenderWhoAmI(){ const sel=exp$('exp-current-member'); if(sel) { sel.innerHTML=expState.members.map(m=>`<option value="${m.id}">${expEsc(m.name)}</option>`).join(''); if(expState.currentMemberId) sel.value=expState.currentMemberId; } }
 function expSetCurrentMember(){
@@ -1297,26 +1294,50 @@ function expResetExpenseForm(){
 function expRenderPayerOptions(){ const payer=exp$('exp-payer'); if(payer){ payer.innerHTML=expState.members.map(m=>`<option value="${m.id}">${expEsc(m.name)}</option>`).join(''); if(expState.currentMemberId && expState.members.some(m=>m.id===expState.currentMemberId)) payer.value=expState.currentMemberId; } }
 function expExpenseScope(){ const shared=exp$('exp-scope-shared'); return shared && shared.checked ? 'shared' : 'private'; }
 function expOwnGroupForExpense(){ const payer=exp$('exp-payer') ? exp$('exp-payer').value : ''; return expGroupForMember(payer || expState.currentMemberId); }
-function expCents(n){ return Math.round((Number(n)||0)*100); }
+function expCents(n){
+  const value=String(n ?? '0').replace(/[^0-9.-]/g,'');
+  const num=Number(value);
+  return Number.isFinite(num) ? Math.round(num*100) : 0;
+}
 function expAmountFromCents(cents){ return Math.round(Number(cents||0))/100; }
 function expSharedAmountToSplit(){ const amountEl=exp$('exp-amount'); return Number(amountEl ? amountEl.value : 0) || 0; }
-function expGroupSharesForExpense(e){
+function expAllocateCents(totalCents, groupIds){
+  const ids=(groupIds||[]).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);
+  const out={};
+  if(!ids.length || totalCents<=0) return out;
+  const base=Math.floor(totalCents/ids.length);
+  let remainder=totalCents-(base*ids.length);
+  ids.forEach((gid,idx)=>{ out[gid]=base+(idx<remainder?1:0); });
+  return out;
+}
+function expGroupShareCentsMapForExpense(e){
   const out={};
   if(!e || (e.scope||'private')!=='shared') return out;
-  const amount=Number(e.amount||0);
+  const amountCents=expCents(e.amount);
+  if(amountCents<=0) return out;
   const method=e.splitMethod || 'all_equal';
   if(method==='custom_amounts' && e.customShares && typeof e.customShares==='object'){
-    Object.entries(e.customShares).forEach(([gid,v])=>{ const n=Number(v)||0; if(n>0) out[Number(gid)]=n; });
+    Object.entries(e.customShares).forEach(([gid,v])=>{
+      const cents=expCents(v);
+      if(Number.isFinite(Number(gid)) && cents>0) out[Number(gid)]=cents;
+    });
     return out;
   }
   let gids=[];
   if(method==='all_equal') gids=expState.groups.map((_,i)=>i);
   else gids=expSelectedGroupIdsFromExpense(e);
-  const share=gids.length ? amount/gids.length : 0;
-  gids.forEach(gid=>{ out[Number(gid)]=share; });
+  return expAllocateCents(amountCents, gids);
+}
+function expGroupSharesForExpense(e){
+  const out={};
+  Object.entries(expGroupShareCentsMapForExpense(e)).forEach(([gid,cents])=>{ out[Number(gid)]=expAmountFromCents(cents); });
   return out;
 }
-function expGroupsWithShare(e){ return Object.entries(expGroupSharesForExpense(e)).filter(([,v])=>Number(v)>0.005).map(([gid])=>Number(gid)); }
+function expGroupsWithShare(e){ return Object.entries(expGroupShareCentsMapForExpense(e)).filter(([,v])=>Number(v)>0).map(([gid])=>Number(gid)); }
+function expShareCentsForGroup(e, groupIndex){
+  if((e.scope||'private')==='shared') return Number(expGroupShareCentsMapForExpense(e)[Number(groupIndex)] || 0);
+  return expPrivateGroupForExpense(e)===Number(groupIndex) ? expCents(e.amount) : 0;
+}
 function expCustomSplitValidation(){
   const status=exp$('exp-custom-split-status'), btn=exp$('exp-submit-expense-btn');
   if(!status) return true;
@@ -1417,20 +1438,27 @@ function expGroupSettlementBreakdown(expenses){
   const data={};
   (expenses || expState.expenses).forEach(e=>{
     if((e.scope||'private')==='private') return;
+    const amountCents=expCents(e.amount);
+    if(amountCents<=0) return;
     const c=expCurrency(e);
-    if(!data[c]){ data[c]={}; expState.groups.forEach((g,i)=>data[c][i]={paid:0,share:0,balance:0}); }
+    if(!data[c]){ data[c]={}; expState.groups.forEach((g,i)=>data[c][i]={paidCents:0,shareCents:0,paid:0,share:0,balance:0}); }
     const payerGroup=expGroupForMember(e.payerId);
-    if(!data[c][payerGroup]) data[c][payerGroup]={paid:0,share:0,balance:0};
-    data[c][payerGroup].paid=expAmountFromCents(expCents(data[c][payerGroup].paid)+expCents(e.amount));
-    const shares=expGroupSharesForExpense(e);
-    Object.entries(shares).forEach(([gid,share])=>{
+    if(!data[c][payerGroup]) data[c][payerGroup]={paidCents:0,shareCents:0,paid:0,share:0,balance:0};
+    data[c][payerGroup].paidCents += amountCents;
+    const shares=expGroupShareCentsMapForExpense(e);
+    Object.entries(shares).forEach(([gid,shareCents])=>{
       const id=Number(gid);
-      if(!data[c][id]) data[c][id]={paid:0,share:0,balance:0};
-      data[c][id].share=expAmountFromCents(expCents(data[c][id].share)+expCents(share));
+      if(!data[c][id]) data[c][id]={paidCents:0,shareCents:0,paid:0,share:0,balance:0};
+      data[c][id].shareCents += Number(shareCents)||0;
     });
   });
   Object.values(data).forEach(currencyRows=>{
-    Object.values(currencyRows).forEach(row=>{ row.balance=expAmountFromCents(expCents(row.paid)-expCents(row.share)); });
+    Object.values(currencyRows).forEach(row=>{
+      row.balanceCents=(row.paidCents||0)-(row.shareCents||0);
+      row.paid=expAmountFromCents(row.paidCents||0);
+      row.share=expAmountFromCents(row.shareCents||0);
+      row.balance=expAmountFromCents(row.balanceCents||0);
+    });
   });
   return data;
 }
@@ -1438,7 +1466,7 @@ function expGroupBalances(expenses){
   const breakdown=expGroupSettlementBreakdown(expenses), balances={};
   Object.entries(breakdown).forEach(([currency, rows])=>{
     balances[currency]={};
-    expState.groups.forEach((g,i)=>{ balances[currency][i]=expAmountFromCents(expCents(rows[i]?.balance || 0)); });
+    expState.groups.forEach((g,i)=>{ balances[currency][i]=Number(rows[i]?.balanceCents || 0); });
   });
   return balances;
 }
@@ -1446,9 +1474,22 @@ function expGroupSettlements(expenses){
   const all=expGroupBalances(expenses), out=[];
   Object.entries(all).forEach(([currency, bal])=>{
     const debtors=[], creditors=[];
-    Object.entries(bal).forEach(([id,v])=>{ const cents=expCents(v); if(cents<0) debtors.push({id:Number(id),cents:-cents}); else if(cents>0) creditors.push({id:Number(id),cents}); });
-    debtors.sort((a,b)=>b.cents-a.cents); creditors.sort((a,b)=>b.cents-a.cents); let i=0,j=0;
-    while(i<debtors.length&&j<creditors.length){ const cents=Math.min(debtors[i].cents,creditors[j].cents); out.push({from:debtors[i].id,to:creditors[j].id,amt:expAmountFromCents(cents),currency}); debtors[i].cents-=cents; creditors[j].cents-=cents; if(debtors[i].cents<=0)i++; if(creditors[j].cents<=0)j++; }
+    Object.entries(bal).forEach(([id,cents])=>{
+      const n=Number(cents)||0;
+      if(n<0) debtors.push({id:Number(id),cents:-n});
+      else if(n>0) creditors.push({id:Number(id),cents:n});
+    });
+    debtors.sort((a,b)=>b.cents-a.cents || a.id-b.id);
+    creditors.sort((a,b)=>b.cents-a.cents || a.id-b.id);
+    let i=0,j=0;
+    while(i<debtors.length && j<creditors.length){
+      const cents=Math.min(debtors[i].cents, creditors[j].cents);
+      if(cents>0) out.push({from:debtors[i].id, to:creditors[j].id, amt:expAmountFromCents(cents), cents, currency});
+      debtors[i].cents-=cents;
+      creditors[j].cents-=cents;
+      if(debtors[i].cents===0) i++;
+      if(creditors[j].cents===0) j++;
+    }
   });
   return out;
 }
@@ -1516,7 +1557,7 @@ function expWireExpenseActions(){
   if(submitBtn && !submitBtn.dataset.expWired){ submitBtn.dataset.expWired='1'; submitBtn.addEventListener('click', expAddExpense); }
 }
 function expExposeGlobals(){
-  Object.assign(window,{expOpenExpenseModal,expCloseExpenseModal,expAddExpense,expOpenSettings,expCloseSettings,expAddGroup,expAddMember,expRenderSplitOptions,expCustomSplitValidation,expOpenMenu,expCloseMenu,expOpenSettingsFromMenu,expSwitchUserFromMenu,expRequestSwitchUser,expOpenWhoAmI,expCloseWhoAmI,expSetCurrentMember,expDeleteExpense,expResetAll,expBackdropClose,expGroupSettlementBreakdown,expGroupBalances,expGroupSettlements,expGroupSharesForExpense,expExpenseSignature});
+  Object.assign(window,{expOpenExpenseModal,expCloseExpenseModal,expAddExpense,expOpenSettings,expCloseSettings,expAddGroup,expAddMember,expRenderSplitOptions,expCustomSplitValidation,expOpenMenu,expCloseMenu,expOpenSettingsFromMenu,expSwitchUserFromMenu,expRequestSwitchUser,expOpenWhoAmI,expCloseWhoAmI,expSetCurrentMember,expDeleteExpense,expResetAll,expBackdropClose,expGroupSettlementBreakdown,expGroupBalances,expGroupSettlements,expGroupSharesForExpense,expGroupShareCentsMapForExpense,expExpenseSignature});
 }
 
 function expInit(){ expLoadState(); expExposeGlobals(); expRenderSettings(); expWireSettingsInputs(); expWireExpenseActions(); expRenderWhoAmI(); expRenderPayerOptions(); expRenderTracker(); if(expState.members.length && !expState.currentMemberId) expOpenWhoAmI(); }
