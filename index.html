@@ -1132,7 +1132,7 @@ function expCurrency(e){ return String((e && e.currency) || expState.currency ||
 function expTotalsByCurrency(list){ const totals={}; (list||[]).forEach(e=>{ const c=expCurrency(e); totals[c]=(totals[c]||0)+Number(e.amount||0); }); return totals; }
 function expShareTotalsByCurrency(list, groupIndex){ const totals={}; (list||[]).forEach(e=>{ const c=expCurrency(e); totals[c]=(totals[c]||0)+expShareForGroup(e, groupIndex); }); return totals; }
 function expAddCurrencyTotals(){ const out={}; Array.from(arguments).forEach(t=>{ Object.entries(t||{}).forEach(([c,v])=>{ out[c]=(out[c]||0)+Number(v||0); }); }); return out; }
-function expMoneyList(totals){ const entries=Object.entries(totals||{}).filter(([,v])=>Math.abs(v)>0.005); return entries.length ? entries.map(([c,v])=>expMoney(v,c)).join('<br>') : expMoney(0,'MYR'); }
+function expMoneyList(totals, emptyCurrency){ const entries=Object.entries(totals||{}).filter(([,v])=>Math.abs(v)>0.005).sort(([a],[b])=>a.localeCompare(b)); return entries.length ? entries.map(([c,v])=>expMoney(v,c)).join('<br>') : expMoney(0, emptyCurrency || expState.currency || 'MYR'); }
 
 function expStableNumber(n){ return Math.round((Number(n)||0)*100)/100; }
 function expStableGroupIds(ids){ return (ids||[]).map(Number).filter(Number.isFinite).sort((a,b)=>a-b); }
@@ -1372,6 +1372,7 @@ function expRenderSplitOptions(){
 }
 function expAddExpense(evt){
   if(evt && typeof evt.preventDefault==='function') evt.preventDefault();
+  if(evt && typeof evt.stopImmediatePropagation==='function') evt.stopImmediatePropagation();
   if(expAddExpense._busy) return false;
   const descEl=exp$('exp-desc'), typeEl=exp$('exp-type'), amountEl=exp$('exp-amount'), payerEl=exp$('exp-payer');
   if(!descEl || !typeEl || !amountEl || !payerEl) return alert('Add Expense form is incomplete. Refresh this latest file and try again.');
@@ -1398,37 +1399,56 @@ function expAddExpense(evt){
   const pendingExpense={desc, type, amount:expStableNumber(amount), currency, payerId, ownerMemberId:expState.currentMemberId||payerId, scope, splitMethod, groupIds, privateGroupIndex, customShares};
   const submitSignature = expExpenseSignature(pendingExpense);
   const submitNow = Date.now();
-  if(expLastExpenseSubmit.signature === submitSignature && submitNow - expLastExpenseSubmit.at < 10000) return false;
+  if(expLastExpenseSubmit.signature === submitSignature && submitNow - expLastExpenseSubmit.at < 30000) return false;
+  expDedupeExpenses();
   if(expState.expenses.some(e => (e.submitSignature || expExpenseSignature(e)) === submitSignature)) return alert('This expense has already been recorded. Duplicate entry blocked.');
   expLastExpenseSubmit = { signature: submitSignature, at: submitNow };
   expAddExpense._busy=true;
   const submitBtn=exp$('exp-submit-expense-btn'); if(submitBtn) submitBtn.disabled=true;
-  try{
-    expState.expenses.unshift({id:expUid(), date:new Date().toISOString(), ...pendingExpense, submitSignature});
-    expDedupeExpenses();
-    expSaveState(); expCloseExpenseModal(); expRenderTracker(); expRenderPayerOptions(); expRenderSplitOptions(); expToast('Expense recorded');
-  } finally {
-    expAddExpense._busy=false;
-  }
+  const nextExpense={id:expUid(), date:new Date().toISOString(), ...pendingExpense, submitSignature};
+  expState.expenses.unshift(nextExpense);
+  expDedupeExpenses();
+  expSaveState(); expCloseExpenseModal(); expRenderTracker(); expRenderPayerOptions(); expRenderSplitOptions(); expToast('Expense recorded');
+  setTimeout(()=>{ expAddExpense._busy=false; }, 600);
+  return false;
 }
 function expDeleteExpense(id){ if(!confirm('Delete this expense?')) return; expState.expenses=expState.expenses.filter(e=>e.id!==id); expSaveState(); expRenderTracker(); }
-function expGroupBalances(expenses){
-  const balances={};
+function expGroupSettlementBreakdown(expenses){
+  const data={};
   (expenses || expState.expenses).forEach(e=>{
     if((e.scope||'private')==='private') return;
-    const c=expCurrency(e); if(!balances[c]){ balances[c]={}; expState.groups.forEach((g,i)=>balances[c][i]=0); }
-    const payerGroup=expGroupForMember(e.payerId); balances[c][payerGroup]=(balances[c][payerGroup]||0)+Number(e.amount||0);
+    const c=expCurrency(e);
+    if(!data[c]){ data[c]={}; expState.groups.forEach((g,i)=>data[c][i]={paid:0,share:0,balance:0}); }
+    const payerGroup=expGroupForMember(e.payerId);
+    if(!data[c][payerGroup]) data[c][payerGroup]={paid:0,share:0,balance:0};
+    data[c][payerGroup].paid=expAmountFromCents(expCents(data[c][payerGroup].paid)+expCents(e.amount));
     const shares=expGroupSharesForExpense(e);
-    Object.entries(shares).forEach(([gid,share])=>{ balances[c][Number(gid)]=(balances[c][Number(gid)]||0)-Number(share||0); });
+    Object.entries(shares).forEach(([gid,share])=>{
+      const id=Number(gid);
+      if(!data[c][id]) data[c][id]={paid:0,share:0,balance:0};
+      data[c][id].share=expAmountFromCents(expCents(data[c][id].share)+expCents(share));
+    });
+  });
+  Object.values(data).forEach(currencyRows=>{
+    Object.values(currencyRows).forEach(row=>{ row.balance=expAmountFromCents(expCents(row.paid)-expCents(row.share)); });
+  });
+  return data;
+}
+function expGroupBalances(expenses){
+  const breakdown=expGroupSettlementBreakdown(expenses), balances={};
+  Object.entries(breakdown).forEach(([currency, rows])=>{
+    balances[currency]={};
+    expState.groups.forEach((g,i)=>{ balances[currency][i]=expAmountFromCents(expCents(rows[i]?.balance || 0)); });
   });
   return balances;
 }
 function expGroupSettlements(expenses){
   const all=expGroupBalances(expenses), out=[];
   Object.entries(all).forEach(([currency, bal])=>{
-    const debtors=[], creditors=[]; Object.entries(bal).forEach(([id,v])=>{ if(v<-0.005) debtors.push({id:Number(id),amt:-v}); else if(v>0.005) creditors.push({id:Number(id),amt:v}); });
-    debtors.sort((a,b)=>b.amt-a.amt); creditors.sort((a,b)=>b.amt-a.amt); let i=0,j=0;
-    while(i<debtors.length&&j<creditors.length){ const amt=Math.min(debtors[i].amt,creditors[j].amt); out.push({from:debtors[i].id,to:creditors[j].id,amt,currency}); debtors[i].amt-=amt; creditors[j].amt-=amt; if(debtors[i].amt<0.005)i++; if(creditors[j].amt<0.005)j++; }
+    const debtors=[], creditors=[];
+    Object.entries(bal).forEach(([id,v])=>{ const cents=expCents(v); if(cents<0) debtors.push({id:Number(id),cents:-cents}); else if(cents>0) creditors.push({id:Number(id),cents}); });
+    debtors.sort((a,b)=>b.cents-a.cents); creditors.sort((a,b)=>b.cents-a.cents); let i=0,j=0;
+    while(i<debtors.length&&j<creditors.length){ const cents=Math.min(debtors[i].cents,creditors[j].cents); out.push({from:debtors[i].id,to:creditors[j].id,amt:expAmountFromCents(cents),currency}); debtors[i].cents-=cents; creditors[j].cents-=cents; if(debtors[i].cents<=0)i++; if(creditors[j].cents<=0)j++; }
   });
   return out;
 }
@@ -1445,7 +1465,7 @@ function expRenderTracker(){
   const sharedShareTotal=expShareTotalsByCurrency(sharedExpenses,currentGroup);
   const privateTotal=expTotalsByCurrency(privateExpenses);
   const myTotal=expAddCurrencyTotals(sharedShareTotal, privateTotal);
-  const bal=expGroupBalances(allSharedExpenses), settlements=expGroupSettlements(allSharedExpenses);
+  const settlementBreakdown=expGroupSettlementBreakdown(allSharedExpenses), bal=expGroupBalances(allSharedExpenses), settlements=expGroupSettlements(allSharedExpenses);
   const view=window.expTrackerView || 'shared';
   const rowFor=e=>{
     const isPrivate=(e.scope||'private')==='private';
@@ -1456,12 +1476,16 @@ function expRenderTracker(){
   };
   const recordsTable=list=>list.length?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Date</th><th>Expense</th><th>Paid by</th><th>Amount</th><th>Your group share</th><th></th></tr></thead><tbody>${list.map(rowFor).join('')}</tbody></table></div>`:'<div class="exp-empty">No expenses visible to your group in this view yet.</div>';
   const involvedGroupIds=[...new Set(allSharedExpenses.flatMap(e=>expSharingGroupsForExpense(e)))].sort((a,b)=>a-b);
-  const balanceRows=(involvedGroupIds.length?involvedGroupIds:[currentGroup]).map(i=>{
+  const currencies=[...new Set(allSharedExpenses.map(expCurrency))].sort();
+  const balanceRows=(involvedGroupIds.length?involvedGroupIds:[currentGroup]).flatMap(i=>{
     const g=expGroupName(i);
     const members=expState.members.filter(m=>Number(m.groupIndex)===i).map(m=>m.name).join(', ') || 'No members';
-    const groupBalances={}; Object.entries(bal).forEach(([c,b])=>{ if(Math.abs((b[i]||0))>0.005) groupBalances[c]=b[i]||0; });
-    const firstBal=Object.values(groupBalances)[0] || 0;
-    return `<tr><td data-label="Group">${expEsc(g)}<br><span class="exp-muted">${expEsc(members)}</span></td><td data-label="Settlement balance" class="exp-money ${firstBal>=0?'exp-pos':'exp-neg'}">${expMoneyList(groupBalances)}</td></tr>`;
+    return (currencies.length?currencies:[expState.currency || 'MYR']).map(c=>{
+      const row=(settlementBreakdown[c] && settlementBreakdown[c][i]) || {paid:0,share:0,balance:0};
+      const cents=expCents(row.balance);
+      const status=cents>0?'Receive':(cents<0?'Pay':'Settled');
+      return `<tr><td data-label="Group">${expEsc(g)}<br><span class="exp-muted">${expEsc(members)}</span></td><td data-label="Currency">${expEsc(c)}</td><td data-label="Shared paid upfront" class="exp-money">${expMoney(row.paid,c)}</td><td data-label="Shared allocated share" class="exp-money">${expMoney(row.share,c)}</td><td data-label="Net settlement" class="exp-money ${cents>=0?'exp-pos':'exp-neg'}">${status}<br>${expMoney(row.balance,c)}</td></tr>`;
+    });
   }).join('');
   const privateRows=[currentGroup].map(i=>{
     const g=expGroupName(i);
@@ -1470,14 +1494,15 @@ function expRenderTracker(){
     const members=expState.members.filter(m=>Number(m.groupIndex)===i).map(m=>m.name).join(', ') || 'No members';
     return `<tr><td data-label="Group">${expEsc(g)}<br><span class="exp-muted">${expEsc(members)}</span></td><td data-label="Not-shared total" class="exp-money">${expMoneyList(groupTotal)}</td><td data-label="Records">${groupPrivate.length}</td></tr>`;
   }).join('');
-  const settleHtml=settlements.length?settlements.map(s=>{
+  const settlementsByCurrency=settlements.reduce((acc,s)=>{ (acc[s.currency]||(acc[s.currency]=[])).push(s); return acc; },{});
+  const settleHtml=Object.keys(settlementsByCurrency).length?Object.entries(settlementsByCurrency).sort(([a],[b])=>a.localeCompare(b)).map(([currency,items])=>`<div class="exp-settlement"><b>${expEsc(currency)} Settlement</b><div class="exp-muted">No currency conversion. These transfers settle only ${expEsc(currency)} expenses.</div>${items.map(s=>{
     const recipients=expState.members.filter(m=>Number(m.groupIndex)===Number(s.to));
     const paynow=recipients.filter(m=>m.paynow).map(m=>`${expEsc(m.name)}: ${expEsc(m.paynow)}`).join('<br>');
-    return `<div class="exp-settlement"><b>${expEsc(expGroupName(s.from))}</b> pays <b>${expEsc(expGroupName(s.to))}</b> <span class="exp-money">${expMoney(s.amt, s.currency)}</span>${paynow?`<div class="exp-paynow">PayNow options:<br>${paynow}</div>`:''}</div>`;
-  }).join(''):'<div class="exp-empty">No settlement needed yet.</div>';
-  const sharedPage=`<div class="exp-card"><h2>Shared Costs</h2><div class="exp-muted">Your group can see shared expenses only when your group is included in the split. The share column shows what your group owes for each expense.</div>${recordsTable(sharedExpenses)}</div><div class="exp-card"><h2>Group Split Summary</h2>${balanceRows?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Group</th><th>Settlement Balance</th></tr></thead><tbody>${balanceRows}</tbody></table></div>`:'<div class="exp-empty">Add groups in the burger menu to start tracking.</div>'}</div><div class="exp-card"><h2>Final Settlement</h2>${settleHtml}</div>`;
+    return `<div class="exp-paynow"><b>${expEsc(expGroupName(s.from))}</b> pays <b>${expEsc(expGroupName(s.to))}</b> <span class="exp-money">${expMoney(s.amt, s.currency)}</span>${paynow?`<br>PayNow options:<br>${paynow}`:''}</div>`;
+  }).join('')}</div>`).join(''):'<div class="exp-empty">No settlement needed yet.</div>';
+  const sharedPage=`<div class="exp-card"><h2>Shared Costs</h2><div class="exp-muted">Your group can see shared expenses only when your group is included in the split. The share column shows what your group owes for each expense. Different currencies are kept separate; no exchange rate conversion is applied.</div>${recordsTable(sharedExpenses)}</div><div class="exp-card"><h2>Group Split Summary</h2>${balanceRows?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Group</th><th>Currency</th><th>Shared paid upfront</th><th>Shared allocated share</th><th>Net settlement</th></tr></thead><tbody>${balanceRows}</tbody></table></div>`:'<div class="exp-empty">Add groups in the burger menu to start tracking.</div>'}</div><div class="exp-card"><h2>Final Settlement</h2>${settleHtml}</div>`;
   const privatePage=`<div class="exp-card"><h2>Not-Shared Costs</h2><div class="exp-muted">Only the group that paid can see these expenses. They are excluded from final settlement.</div>${recordsTable(privateExpenses)}</div><div class="exp-card"><h2>Actual Expense by Your Group</h2>${privateRows?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Group</th><th>Not-shared total</th><th>Records</th></tr></thead><tbody>${privateRows}</tbody></table></div>`:'<div class="exp-empty">Add groups in the burger menu to start tracking.</div>'}</div>`;
-  el.innerHTML = `<div class="exp-card"><div class="exp-summary-grid"><div class="exp-metric"><div class="exp-metric-label">Total shared expenses</div><div class="exp-metric-value">${expMoneyList(sharedTotal)}</div></div><div class="exp-metric exp-metric-total"><div class="exp-metric-label">My total expenses</div><div class="exp-metric-value">${expMoneyList(myTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My share of shared</div><div class="exp-metric-value">${expMoneyList(sharedShareTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My private expenses</div><div class="exp-metric-value">${expMoneyList(privateTotal)}</div></div></div><div class="exp-muted exp-summary-note">My total expenses = my share of shared + my private expenses. Current user: ${current?expEsc(current.name):'Not selected'} · Current group: ${expEsc(expGroupName(currentGroup))}.</div></div><div class="opt-toggle exp-tracker-toggle"><button class="opt-btn ${view==='shared'?'active':''}" onclick="expSetTrackerView('shared')">Shared expenses<span>Group split + settlement</span></button><button class="opt-btn ${view==='private'?'active':''}" onclick="expSetTrackerView('private')">Not shared expenses<span>Your group only</span></button></div>${view==='private'?privatePage:sharedPage}`;
+  el.innerHTML = `<div class="exp-card"><div class="exp-summary-grid"><div class="exp-metric"><div class="exp-metric-label">Total shared expenses</div><div class="exp-metric-value">${expMoneyList(sharedTotal)}</div></div><div class="exp-metric exp-metric-total"><div class="exp-metric-label">My total expenses</div><div class="exp-metric-value">${expMoneyList(myTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My share of shared</div><div class="exp-metric-value">${expMoneyList(sharedShareTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My private expenses</div><div class="exp-metric-value">${expMoneyList(privateTotal)}</div></div></div><div class="exp-muted exp-summary-note">My total expenses = my share of shared + my private expenses, calculated separately per currency. Current user: ${current?expEsc(current.name):'Not selected'} · Current group: ${expEsc(expGroupName(currentGroup))}.</div></div><div class="opt-toggle exp-tracker-toggle"><button class="opt-btn ${view==='shared'?'active':''}" onclick="expSetTrackerView('shared')">Shared expenses<span>Group split + settlement</span></button><button class="opt-btn ${view==='private'?'active':''}" onclick="expSetTrackerView('private')">Not shared expenses<span>Your group only</span></button></div>${view==='private'?privatePage:sharedPage}`;
 }
 function expResetAll(){ const pwd=prompt('Enter admin password to reset tracker.'); if(pwd !== EXP_ADMIN_PASSWORD) return alert('Admin password is required to reset tracker.'); if(!confirm('Reset all tracker settings and expenses?')) return; expState={ currency:'MYR', groups:['Car 1','Car 2','Car 3'], members:[], currentMemberId:'', expenses:[] }; localStorage.removeItem(EXP_STORAGE_KEY); localStorage.removeItem(EXP_MYR_MIGRATION_KEY); expRenderSettings(); expRenderWhoAmI(); expRenderTracker(); expToast('Tracker reset'); }
 
@@ -1491,7 +1516,7 @@ function expWireExpenseActions(){
   if(submitBtn && !submitBtn.dataset.expWired){ submitBtn.dataset.expWired='1'; submitBtn.addEventListener('click', expAddExpense); }
 }
 function expExposeGlobals(){
-  Object.assign(window,{expOpenExpenseModal,expCloseExpenseModal,expAddExpense,expOpenSettings,expCloseSettings,expAddGroup,expAddMember,expRenderSplitOptions,expCustomSplitValidation,expOpenMenu,expCloseMenu,expOpenSettingsFromMenu,expSwitchUserFromMenu,expRequestSwitchUser,expOpenWhoAmI,expCloseWhoAmI,expSetCurrentMember,expDeleteExpense,expResetAll,expBackdropClose});
+  Object.assign(window,{expOpenExpenseModal,expCloseExpenseModal,expAddExpense,expOpenSettings,expCloseSettings,expAddGroup,expAddMember,expRenderSplitOptions,expCustomSplitValidation,expOpenMenu,expCloseMenu,expOpenSettingsFromMenu,expSwitchUserFromMenu,expRequestSwitchUser,expOpenWhoAmI,expCloseWhoAmI,expSetCurrentMember,expDeleteExpense,expResetAll,expBackdropClose,expGroupSettlementBreakdown,expGroupBalances,expGroupSettlements,expGroupSharesForExpense,expExpenseSignature});
 }
 
 function expInit(){ expLoadState(); expExposeGlobals(); expRenderSettings(); expWireSettingsInputs(); expWireExpenseActions(); expRenderWhoAmI(); expRenderPayerOptions(); expRenderTracker(); if(expState.members.length && !expState.currentMemberId) expOpenWhoAmI(); }
