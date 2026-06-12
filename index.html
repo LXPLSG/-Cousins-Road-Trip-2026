@@ -1123,8 +1123,12 @@ function renderToday() {
 const EXP_STORAGE_KEY = 'chen-cousins-expense-tracker-v1';
 const EXP_ADMIN_PASSWORD = 'Secret';
 const EXP_MYR_MIGRATION_KEY = 'chen-cousins-expense-tracker-migrated-sgd-to-myr-v2';
+const EXP_SYNC_URL = 'https://script.google.com/macros/s/AKfycbwa5Ju5VQVY3Se91YujpfkBE38V7FbtrH2lMD1fBYjLlymudD1O5cwqY-pmB5wQKArZTg/exec';
+const EXP_SYNC_ENABLED = true;
+const EXP_SYNC_CLIENT_KEY = 'chen-cousins-expense-sync-client-v1';
 let expState = { currency:'MYR', groups:['Car 1','Car 2','Car 3'], members:[], currentMemberId:'', expenses:[] };
 let expLastExpenseSubmit = { signature:'', at:0 };
+const EXP_DUPLICATE_WINDOW_MS = 5000;
 const exp$ = id => document.getElementById(id);
 function expUid(){ return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4); }
 function expMoney(n, currency){ return `${(currency || 'MYR').toUpperCase()} ${Number(n||0).toFixed(2)}`; }
@@ -1158,24 +1162,136 @@ function expExpenseSignatureData(e){
   };
 }
 function expExpenseSignature(e){ return JSON.stringify(expExpenseSignatureData(e)); }
+function expTimeMs(e){ const t=Date.parse(e && e.date ? e.date : ''); return Number.isFinite(t) ? t : 0; }
+function expSameSignatureNearTime(a,b,windowMs=EXP_DUPLICATE_WINDOW_MS){
+  const sigA=(a && (a.submitSignature || expExpenseSignature(a))) || '';
+  const sigB=(b && (b.submitSignature || expExpenseSignature(b))) || '';
+  if(!sigA || sigA!==sigB) return false;
+  const ta=expTimeMs(a), tb=expTimeMs(b);
+  if(!ta || !tb) return false;
+  return Math.abs(ta-tb) <= windowMs;
+}
+function expIsDuplicateExpense(candidate, existing){
+  if(!candidate || !existing) return false;
+  if(candidate.id && existing.id && String(candidate.id)===String(existing.id)) return true;
+  return expSameSignatureNearTime(candidate, existing);
+}
+function expIsDeletedByTombstone(e){
+  if(!e) return false;
+  const id=String(e.id || '');
+  const tombs=Array.isArray(expState.deletedExpenseTombstones) ? expState.deletedExpenseTombstones : [];
+  if(id && (expState.deletedExpenseIds||[]).map(String).includes(id)) return true;
+  return tombs.some(t=>{
+    if(!t) return false;
+    if(t.id && id && String(t.id)===id) return true;
+    if(t.signature && (e.submitSignature || expExpenseSignature(e)) === String(t.signature)){
+      const tt=Date.parse(t.date || ''); const et=expTimeMs(e);
+      return Number.isFinite(tt) && et && Math.abs(tt-et) <= EXP_DUPLICATE_WINDOW_MS;
+    }
+    return false;
+  });
+}
 function expDedupeExpenses(){
-  const seen=new Set();
   const out=[];
   (expState.expenses||[]).forEach(e=>{
-    const sig=e.submitSignature || expExpenseSignature(e);
-    if(seen.has(sig)) return;
-    seen.add(sig);
-    out.push({...e, submitSignature:sig});
+    const normal={...e, submitSignature:e.submitSignature || expExpenseSignature(e)};
+    if(expIsDeletedByTombstone(normal)) return;
+    if(out.some(existing=>expIsDuplicateExpense(normal, existing))) return;
+    out.push(normal);
   });
   expState.expenses=out;
 }
+
 function expEsc(s){ return String(s ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch])); }
-function expSaveState(){ localStorage.setItem(EXP_STORAGE_KEY, JSON.stringify(expState)); }
+function expSaveLocalStateOnly(){ localStorage.setItem(EXP_STORAGE_KEY, JSON.stringify(expState)); }
+function expSyncClientId(){
+  let id=localStorage.getItem(EXP_SYNC_CLIENT_KEY);
+  if(!id){ id=expUid(); localStorage.setItem(EXP_SYNC_CLIENT_KEY,id); }
+  return id;
+}
+function expSharedStatePayload(){
+  return {
+    currency: expState.currency || 'MYR',
+    groups: Array.isArray(expState.groups) ? expState.groups : [],
+    members: Array.isArray(expState.members) ? expState.members : [],
+    expenses: Array.isArray(expState.expenses) ? expState.expenses : [],
+    deletedExpenseIds: Array.isArray(expState.deletedExpenseIds) ? expState.deletedExpenseIds : [],
+    deletedExpenseTombstones: Array.isArray(expState.deletedExpenseTombstones) ? expState.deletedExpenseTombstones : [],
+    deletedMemberIds: Array.isArray(expState.deletedMemberIds) ? expState.deletedMemberIds : [],
+    updatedAt: new Date().toISOString()
+  };
+}
+function expApplyRemoteState(remote, opts={}){
+  if(!remote || typeof remote !== 'object') return;
+  const localCurrent = expState.currentMemberId;
+  const next = {
+    ...expState,
+    currency: remote.currency || expState.currency || 'MYR',
+    groups: Array.isArray(remote.groups) && remote.groups.length ? remote.groups : expState.groups,
+    members: Array.isArray(remote.members) ? remote.members : expState.members,
+    expenses: Array.isArray(remote.expenses) ? remote.expenses : expState.expenses,
+    deletedExpenseIds: Array.isArray(remote.deletedExpenseIds) ? remote.deletedExpenseIds : (expState.deletedExpenseIds || []),
+    deletedExpenseTombstones: Array.isArray(remote.deletedExpenseTombstones) ? remote.deletedExpenseTombstones : (expState.deletedExpenseTombstones || []),
+    deletedMemberIds: Array.isArray(remote.deletedMemberIds) ? remote.deletedMemberIds : (expState.deletedMemberIds || []),
+    currentMemberId: localCurrent
+  };
+  expState = next;
+  expNormalizeState();
+  expSaveLocalStateOnly();
+  if(opts.render !== false){
+    expRenderSettings(); expRenderWhoAmI(); expRenderPayerOptions(); expRenderSplitOptions(); expRenderTracker();
+  }
+}
+let expSyncSaving=false, expSyncPending=false, expSyncLoading=false;
+async function expSyncRequest(payload){
+  if(!EXP_SYNC_ENABLED || !EXP_SYNC_URL) return null;
+  const res = await fetch(EXP_SYNC_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({...payload, clientId: expSyncClientId()})
+  });
+  const text = await res.text();
+  try{ return JSON.parse(text); }catch(err){ throw new Error('Sync server returned non-JSON response: '+text.slice(0,120)); }
+}
+async function expSyncLoadState(){
+  if(expSyncLoading) return;
+  expSyncLoading=true;
+  try{
+    const data = await expSyncRequest({action:'load'});
+    if(data && data.success && data.state) expApplyRemoteState(data.state);
+  }catch(err){ console.warn('Expense sync load failed', err); expToast('Offline/local mode'); }
+  finally{ expSyncLoading=false; }
+}
+async function expSyncSaveState(){
+  if(!EXP_SYNC_ENABLED || !EXP_SYNC_URL) return;
+  if(expSyncSaving){ expSyncPending=true; return; }
+  expSyncSaving=true;
+  try{
+    const data = await expSyncRequest({action:'save', state: expSharedStatePayload()});
+    if(data && data.success && data.state) expApplyRemoteState(data.state);
+  }catch(err){ console.warn('Expense sync save failed', err); expToast('Saved locally; sync failed'); }
+  finally{
+    expSyncSaving=false;
+    if(expSyncPending){ expSyncPending=false; expSyncSaveState(); }
+  }
+}
+async function expSyncResetState(){
+  expSaveLocalStateOnly();
+  try{
+    const data = await expSyncRequest({action:'reset', state: expSharedStatePayload()});
+    if(data && data.success && data.state) expApplyRemoteState(data.state);
+  }catch(err){ console.warn('Expense sync reset failed', err); expToast('Reset locally; sync failed'); }
+}
+function expSaveState(){ expNormalizeState(); expSaveLocalStateOnly(); expSyncSaveState(); }
 function expNormalizeState(){
   expState.currency = (expState.currency || 'MYR').toUpperCase();
   if(!Array.isArray(expState.groups) || !expState.groups.length) expState.groups = ['Car 1','Car 2','Car 3'];
   if(!Array.isArray(expState.members)) expState.members = [];
   if(!Array.isArray(expState.expenses)) expState.expenses = [];
+  if(!Array.isArray(expState.deletedExpenseIds)) expState.deletedExpenseIds = [];
+  if(!Array.isArray(expState.deletedExpenseTombstones)) expState.deletedExpenseTombstones = [];
+  expState.deletedExpenseTombstones = expState.deletedExpenseTombstones.filter(t=>t && (t.id || t.signature)).map(t=>({id:String(t.id||''), signature:String(t.signature||''), date:String(t.date||'')}));
+  if(!Array.isArray(expState.deletedMemberIds)) expState.deletedMemberIds = [];
   if(typeof expState.currentMemberId !== 'string') expState.currentMemberId = '';
   if(expState.currentMemberId && !expState.members.some(m => m.id === expState.currentMemberId)) expState.currentMemberId = '';
   if(!expState.currentMemberId && expState.members.length) expState.currentMemberId = expState.members[0].id;
@@ -1282,7 +1398,7 @@ function expWireSettingsInputs(){
 function expAddGroup(){ const input=exp$('exp-group-name'); const v=input ? input.value.trim() : ''; if(!v) return alert('Enter a group name.'); expState.groups.push(v); if(input) input.value=''; expSaveState(); expRenderSettings(); expRenderSplitOptions(); expRenderTracker(); expToast('Group added'); }
 function expRemoveGroup(i){ if(expState.groups.length<=1) return alert('Keep at least one group.'); if(!confirm('Remove this group? Members in it will move to the first group.')) return; expState.groups.splice(i,1); expState.members.forEach(m=>{ if(Number(m.groupIndex)===i) m.groupIndex=0; else if(Number(m.groupIndex)>i) m.groupIndex=Number(m.groupIndex)-1; }); expState.expenses.forEach(e=>{ e.groupIds=(e.groupIds||[]).map(Number).map(g=>g===i?0:(g>i?g-1:g)); if(Number(e.privateGroupIndex)===i) e.privateGroupIndex=0; else if(Number(e.privateGroupIndex)>i) e.privateGroupIndex=Number(e.privateGroupIndex)-1; }); expSaveState(); expRenderSettings(); expRenderTracker(); }
 function expAddMember(){ const nameInput=exp$('exp-member-name'), paynowInput=exp$('exp-member-paynow'), groupSelect=exp$('exp-member-group'); const name=nameInput ? nameInput.value.trim() : '', paynow=paynowInput ? paynowInput.value.trim() : '', groupIndex=Number(groupSelect ? groupSelect.value||0 : 0); if(!name) return alert('Enter a member name.'); if(expState.members.some(m=>m.name.toLowerCase()===name.toLowerCase())) return alert('That member already exists.'); const id=expUid(); expState.members.push({id, name, paynow, groupIndex}); if(!expState.currentMemberId) expState.currentMemberId=id; if(nameInput) nameInput.value=''; if(paynowInput) paynowInput.value=''; expSaveState(); expRenderSettings(); expRenderWhoAmI(); expRenderPayerOptions(); expRenderSplitOptions(); expRenderTracker(); expToast('Member added'); }
-function expRemoveMember(id){ if(expState.expenses.some(e=>e.payerId===id) && !confirm('This member is used in expenses. Remove member and affected expenses?')) return; expState.members=expState.members.filter(m=>m.id!==id); expState.expenses=expState.expenses.filter(e=>e.payerId!==id); if(expState.currentMemberId===id) expState.currentMemberId=''; expSaveState(); expRenderSettings(); expRenderWhoAmI(); expRenderTracker(); }
+function expRemoveMember(id){ if(expState.expenses.some(e=>e.payerId===id) && !confirm('This member is used in expenses. Remove member and affected expenses?')) return; expState.deletedMemberIds=[...new Set([...(expState.deletedMemberIds||[]), String(id)])]; expState.members=expState.members.filter(m=>m.id!==id); const removedExpenseIds=expState.expenses.filter(e=>e.payerId===id).map(e=>String(e.id)); expState.deletedExpenseIds=[...new Set([...(expState.deletedExpenseIds||[]), ...removedExpenseIds])]; expState.deletedExpenseTombstones=[...((expState.deletedExpenseTombstones)||[]), ...expState.expenses.filter(e=>removedExpenseIds.includes(String(e.id))).map(e=>({id:String(e.id), signature:e.submitSignature||expExpenseSignature(e), date:e.date||new Date().toISOString()}))]; expState.expenses=expState.expenses.filter(e=>e.payerId!==id); if(expState.currentMemberId===id) expState.currentMemberId=''; expSaveState(); expRenderSettings(); expRenderWhoAmI(); expRenderTracker(); }
 function expResetExpenseForm(){
   exp$('exp-desc').value=''; exp$('exp-type').value='Accommodation'; exp$('exp-amount').value='';
   const cur=exp$('exp-currency'); if(cur) cur.value='MYR';
@@ -1420,20 +1536,31 @@ function expAddExpense(evt){
   const pendingExpense={desc, type, amount:expStableNumber(amount), currency, payerId, ownerMemberId:expState.currentMemberId||payerId, scope, splitMethod, groupIds, privateGroupIndex, customShares};
   const submitSignature = expExpenseSignature(pendingExpense);
   const submitNow = Date.now();
-  if(expLastExpenseSubmit.signature === submitSignature && submitNow - expLastExpenseSubmit.at < 30000) return false;
+  const nowIso = new Date(submitNow).toISOString();
+  if(expLastExpenseSubmit.signature === submitSignature && submitNow - expLastExpenseSubmit.at <= EXP_DUPLICATE_WINDOW_MS) return false;
   expDedupeExpenses();
-  if(expState.expenses.some(e => (e.submitSignature || expExpenseSignature(e)) === submitSignature)) return alert('This expense has already been recorded. Duplicate entry blocked.');
+  const nextExpense={id:expUid(), date:nowIso, ...pendingExpense, submitSignature};
+  if(expState.expenses.some(e => expIsDuplicateExpense(nextExpense, e))) return alert('This expense appears to have just been recorded. Duplicate entry blocked.');
   expLastExpenseSubmit = { signature: submitSignature, at: submitNow };
   expAddExpense._busy=true;
   const submitBtn=exp$('exp-submit-expense-btn'); if(submitBtn) submitBtn.disabled=true;
-  const nextExpense={id:expUid(), date:new Date().toISOString(), ...pendingExpense, submitSignature};
   expState.expenses.unshift(nextExpense);
   expDedupeExpenses();
   expSaveState(); expCloseExpenseModal(); expRenderTracker(); expRenderPayerOptions(); expRenderSplitOptions(); expToast('Expense recorded');
   setTimeout(()=>{ expAddExpense._busy=false; }, 600);
   return false;
 }
-function expDeleteExpense(id){ if(!confirm('Delete this expense?')) return; expState.expenses=expState.expenses.filter(e=>e.id!==id); expSaveState(); expRenderTracker(); }
+function expDeleteExpense(id){
+  if(!confirm('Delete this expense?')) return;
+  const target=(expState.expenses||[]).find(e=>String(e.id)===String(id));
+  expState.deletedExpenseIds=[...new Set([...(expState.deletedExpenseIds||[]), String(id)])];
+  if(target){
+    const tomb={id:String(target.id), signature:target.submitSignature||expExpenseSignature(target), date:target.date||new Date().toISOString()};
+    expState.deletedExpenseTombstones=[...((expState.deletedExpenseTombstones)||[]), tomb];
+  }
+  expState.expenses=expState.expenses.filter(e=>String(e.id)!==String(id));
+  expSaveState(); expRenderTracker();
+}
 function expGroupSettlementBreakdown(expenses){
   const data={};
   (expenses || expState.expenses).forEach(e=>{
@@ -1545,7 +1672,7 @@ function expRenderTracker(){
   const privatePage=`<div class="exp-card"><h2>Not-Shared Costs</h2><div class="exp-muted">Only the group that paid can see these expenses. They are excluded from final settlement.</div>${recordsTable(privateExpenses)}</div><div class="exp-card"><h2>Actual Expense by Your Group</h2>${privateRows?`<div class="exp-table-wrap"><table class="exp-table"><thead><tr><th>Group</th><th>Not-shared total</th><th>Records</th></tr></thead><tbody>${privateRows}</tbody></table></div>`:'<div class="exp-empty">Add groups in the burger menu to start tracking.</div>'}</div>`;
   el.innerHTML = `<div class="exp-card"><div class="exp-summary-grid"><div class="exp-metric"><div class="exp-metric-label">Total shared expenses</div><div class="exp-metric-value">${expMoneyList(sharedTotal)}</div></div><div class="exp-metric exp-metric-total"><div class="exp-metric-label">My total expenses</div><div class="exp-metric-value">${expMoneyList(myTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My share of shared</div><div class="exp-metric-value">${expMoneyList(sharedShareTotal)}</div></div><div class="exp-metric"><div class="exp-metric-label">My private expenses</div><div class="exp-metric-value">${expMoneyList(privateTotal)}</div></div></div><div class="exp-muted exp-summary-note">My total expenses = my share of shared + my private expenses, calculated separately per currency. Current user: ${current?expEsc(current.name):'Not selected'} · Current group: ${expEsc(expGroupName(currentGroup))}.</div></div><div class="opt-toggle exp-tracker-toggle"><button class="opt-btn ${view==='shared'?'active':''}" onclick="expSetTrackerView('shared')">Shared expenses<span>Group split + settlement</span></button><button class="opt-btn ${view==='private'?'active':''}" onclick="expSetTrackerView('private')">Not shared expenses<span>Your group only</span></button></div>${view==='private'?privatePage:sharedPage}`;
 }
-function expResetAll(){ const pwd=prompt('Enter admin password to reset tracker.'); if(pwd !== EXP_ADMIN_PASSWORD) return alert('Admin password is required to reset tracker.'); if(!confirm('Reset all tracker settings and expenses?')) return; expState={ currency:'MYR', groups:['Car 1','Car 2','Car 3'], members:[], currentMemberId:'', expenses:[] }; localStorage.removeItem(EXP_STORAGE_KEY); localStorage.removeItem(EXP_MYR_MIGRATION_KEY); expRenderSettings(); expRenderWhoAmI(); expRenderTracker(); expToast('Tracker reset'); }
+function expResetAll(){ const pwd=prompt('Enter admin password to reset tracker.'); if(pwd !== EXP_ADMIN_PASSWORD) return alert('Admin password is required to reset tracker.'); if(!confirm('Reset all tracker settings and expenses for everyone?')) return; expState={ currency:'MYR', groups:['Car 1','Car 2','Car 3'], members:[], currentMemberId:'', expenses:[], deletedExpenseIds:[], deletedExpenseTombstones:[], deletedMemberIds:[] }; localStorage.removeItem(EXP_STORAGE_KEY); localStorage.removeItem(EXP_MYR_MIGRATION_KEY); expSyncResetState(); expRenderSettings(); expRenderWhoAmI(); expRenderTracker(); expToast('Tracker reset'); }
 
 function expWireExpenseActions(){
   document.querySelectorAll('.exp-dialog').forEach(d=>{
@@ -1557,10 +1684,10 @@ function expWireExpenseActions(){
   if(submitBtn && !submitBtn.dataset.expWired){ submitBtn.dataset.expWired='1'; submitBtn.addEventListener('click', expAddExpense); }
 }
 function expExposeGlobals(){
-  Object.assign(window,{expOpenExpenseModal,expCloseExpenseModal,expAddExpense,expOpenSettings,expCloseSettings,expAddGroup,expAddMember,expRenderSplitOptions,expCustomSplitValidation,expOpenMenu,expCloseMenu,expOpenSettingsFromMenu,expSwitchUserFromMenu,expRequestSwitchUser,expOpenWhoAmI,expCloseWhoAmI,expSetCurrentMember,expDeleteExpense,expResetAll,expBackdropClose,expGroupSettlementBreakdown,expGroupBalances,expGroupSettlements,expGroupSharesForExpense,expGroupShareCentsMapForExpense,expExpenseSignature});
+  Object.assign(window,{expOpenExpenseModal,expCloseExpenseModal,expAddExpense,expOpenSettings,expCloseSettings,expAddGroup,expAddMember,expRenderSplitOptions,expCustomSplitValidation,expOpenMenu,expCloseMenu,expOpenSettingsFromMenu,expSwitchUserFromMenu,expRequestSwitchUser,expOpenWhoAmI,expCloseWhoAmI,expSetCurrentMember,expDeleteExpense,expResetAll,expBackdropClose,expGroupSettlementBreakdown,expGroupBalances,expGroupSettlements,expGroupSharesForExpense,expGroupShareCentsMapForExpense,expExpenseSignature,expSyncLoadState,expSyncSaveState});
 }
 
-function expInit(){ expLoadState(); expExposeGlobals(); expRenderSettings(); expWireSettingsInputs(); expWireExpenseActions(); expRenderWhoAmI(); expRenderPayerOptions(); expRenderTracker(); if(expState.members.length && !expState.currentMemberId) expOpenWhoAmI(); }
+function expInit(){ expLoadState(); expExposeGlobals(); expRenderSettings(); expWireSettingsInputs(); expWireExpenseActions(); expRenderWhoAmI(); expRenderPayerOptions(); expRenderTracker(); expSyncLoadState(); setInterval(expSyncLoadState, 15000); if(expState.members.length && !expState.currentMemberId) expOpenWhoAmI(); }
 
 // ═══════════════════════════════════════
 // NAVIGATION
