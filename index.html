@@ -1221,9 +1221,28 @@ function expSharedStatePayload(){
     updatedAt: new Date().toISOString()
   };
 }
+function expExpenseModalIsOpen(){
+  const modal=exp$('exp-expense-modal');
+  return !!(modal && modal.classList && modal.classList.contains('open'));
+}
+function expCaptureExpenseFormDraft(){
+  const draft={ customShares:{}, splitGroupChecks:{}, fields:{} };
+  ['exp-desc','exp-type','exp-currency','exp-amount','exp-payer','exp-split-method'].forEach(id=>{ const el=exp$(id); if(el) draft.fields[id]=el.value; });
+  document.querySelectorAll('.exp-custom-share').forEach(input=>{ draft.customShares[String(input.dataset.groupId)] = input.value; });
+  document.querySelectorAll('.exp-split-group').forEach(input=>{ draft.splitGroupChecks[String(input.value)] = !!input.checked; });
+  return draft;
+}
+function expRestoreExpenseFormDraft(draft){
+  if(!draft) return;
+  Object.entries(draft.fields||{}).forEach(([id,value])=>{ const el=exp$(id); if(el && value !== undefined) el.value=value; });
+  document.querySelectorAll('.exp-custom-share').forEach(input=>{ const key=String(input.dataset.groupId); if(Object.prototype.hasOwnProperty.call(draft.customShares||{}, key)) input.value=draft.customShares[key]; });
+  document.querySelectorAll('.exp-split-group').forEach(input=>{ const key=String(input.value); if(Object.prototype.hasOwnProperty.call(draft.splitGroupChecks||{}, key)) input.checked=!!draft.splitGroupChecks[key]; });
+}
 function expApplyRemoteState(remote, opts={}){
   if(!remote || typeof remote !== 'object') return;
   const localCurrent = expState.currentMemberId;
+  const expenseModalOpen = expExpenseModalIsOpen();
+  const expenseDraft = expenseModalOpen ? expCaptureExpenseFormDraft() : null;
   const next = {
     ...expState,
     currency: remote.currency || expState.currency || 'MYR',
@@ -1239,7 +1258,14 @@ function expApplyRemoteState(remote, opts={}){
   expNormalizeState();
   expSaveLocalStateOnly();
   if(opts.render !== false){
-    expRenderSettings(); expRenderWhoAmI(); expRenderPayerOptions(); expRenderSplitOptions(); expRenderTracker();
+    expRenderSettings(); expRenderWhoAmI();
+    if(expenseModalOpen){
+      expRestoreExpenseFormDraft(expenseDraft);
+      expRenderTracker();
+      expCustomSplitValidation();
+    } else {
+      expRenderPayerOptions(); expRenderSplitOptions(); expRenderTracker();
+    }
   }
 }
 let expSyncSaving=false, expSyncPending=false, expSyncLoading=false;
@@ -1522,6 +1548,7 @@ function expCustomSplitValidation(){
 function expRenderSplitOptions(){
   const box=exp$('exp-split-options'), label=exp$('exp-split-label'), methodField=exp$('exp-split-method-field'), groupField=exp$('exp-split-group-field'), status=exp$('exp-custom-split-status');
   if(!box || !label) return;
+  const draft = expCaptureExpenseFormDraft();
   const scope=expExpenseScope();
   const submitBtn=exp$('exp-submit-expense-btn'); if(submitBtn) submitBtn.disabled=false;
   if(status){ status.textContent=''; status.classList.remove('exp-error','exp-ok'); }
@@ -1544,11 +1571,13 @@ function expRenderSplitOptions(){
   if(method==='custom_amounts'){
     label.textContent='Custom amount by group';
     box.innerHTML=expState.groups.map((g,i)=>`<label class="exp-custom-row"><span>${expEsc(g)}</span><input class="exp-custom-share" type="number" min="0" step="0.01" data-group-id="${i}" placeholder="0.00" oninput="expCustomSplitValidation()"></label>`).join('') || '<div class="exp-muted">Add groups in Settings first.</div>';
+    expRestoreExpenseFormDraft(draft);
     expCustomSplitValidation();
     return;
   }
   label.textContent='Share by selected groups only';
   box.innerHTML=expState.groups.map((g,i)=>`<label class="exp-check"><input type="checkbox" class="exp-split-group" value="${i}" checked> ${expEsc(g)}</label>`).join('') || '<div class="exp-muted">Add groups in Settings first.</div>';
+  expRestoreExpenseFormDraft(draft);
 }
 function expAddExpense(evt){
   if(evt && typeof evt.preventDefault==='function') evt.preventDefault();
