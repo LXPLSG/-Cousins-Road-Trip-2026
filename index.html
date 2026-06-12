@@ -1265,15 +1265,29 @@ function expSyncJsonpLoad(){
   });
 }
 
-async function expSyncPostNoCors(payload){
-  if(!EXP_SYNC_ENABLED || !EXP_SYNC_URL) return null;
-  await fetch(EXP_SYNC_URL, {
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({...payload, clientId: expSyncClientId(), ts:new Date().toISOString()})
+function expSyncJsonpRequest(action, state){
+  if(!EXP_SYNC_ENABLED || !EXP_SYNC_URL) return Promise.resolve(null);
+  return new Promise((resolve, reject)=>{
+    const cb='expSyncCb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const script=document.createElement('script');
+    const sep=EXP_SYNC_URL.includes('?') ? '&' : '?';
+    const payload = JSON.stringify({
+      action,
+      state: state || expSharedStatePayload(),
+      clientId: expSyncClientId(),
+      ts: new Date().toISOString()
+    });
+    const cleanup=()=>{
+      clearTimeout(timer);
+      try{ delete window[cb]; }catch(e){ window[cb]=undefined; }
+      if(script && script.parentNode) script.parentNode.removeChild(script);
+    };
+    const timer=setTimeout(()=>{ cleanup(); reject(new Error('Sync '+action+' timed out')); }, 15000);
+    window[cb]=(data)=>{ cleanup(); resolve(data); };
+    script.onerror=()=>{ cleanup(); reject(new Error('Sync '+action+' script failed')); };
+    script.src=EXP_SYNC_URL+sep+'action='+encodeURIComponent(action)+'&payload='+encodeURIComponent(payload)+'&callback='+encodeURIComponent(cb)+'&ts='+Date.now();
+    document.head.appendChild(script);
   });
-  return {success:true};
 }
 
 async function expSyncLoadState(){
@@ -1291,8 +1305,9 @@ async function expSyncSaveState(){
   if(expSyncSaving){ expSyncPending=true; return; }
   expSyncSaving=true;
   try{
-    await expSyncPostNoCors({action:'save', state: expSharedStatePayload()});
-    setTimeout(()=>expSyncLoadState(), 900);
+    const result = await expSyncJsonpRequest('save', expSharedStatePayload());
+    if(result && result.success && result.state) expApplySharedState(result.state);
+    else setTimeout(()=>expSyncLoadState(), 900);
   }catch(err){ console.warn('Expense sync save failed', err); expToast('Saved locally; sync failed'); }
   finally{
     expSyncSaving=false;
@@ -1302,8 +1317,9 @@ async function expSyncSaveState(){
 async function expSyncResetState(){
   expSaveLocalStateOnly();
   try{
-    await expSyncPostNoCors({action:'reset', state: expSharedStatePayload()});
-    setTimeout(()=>expSyncLoadState(), 900);
+    const result = await expSyncJsonpRequest('reset', expSharedStatePayload());
+    if(result && result.success && result.state) expApplySharedState(result.state);
+    else setTimeout(()=>expSyncLoadState(), 900);
   }catch(err){ console.warn('Expense sync reset failed', err); expToast('Reset locally; sync failed'); }
 }
 function expSaveState(){ expNormalizeState(); expSaveLocalStateOnly(); expSyncSaveState(); }
