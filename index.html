@@ -1306,7 +1306,7 @@ async function expSyncSaveState(){
   expSyncSaving=true;
   try{
     const result = await expSyncJsonpRequest('save', expSharedStatePayload());
-    if(result && result.success && result.state) expApplySharedState(result.state);
+    if(result && result.success && result.state) expApplyRemoteState(result.state);
     else setTimeout(()=>expSyncLoadState(), 900);
   }catch(err){ console.warn('Expense sync save failed', err); expToast('Saved locally; sync failed'); }
   finally{
@@ -1318,7 +1318,7 @@ async function expSyncResetState(){
   expSaveLocalStateOnly();
   try{
     const result = await expSyncJsonpRequest('reset', expSharedStatePayload());
-    if(result && result.success && result.state) expApplySharedState(result.state);
+    if(result && result.success && result.state) expApplyRemoteState(result.state);
     else setTimeout(()=>expSyncLoadState(), 900);
   }catch(err){ console.warn('Expense sync reset failed', err); expToast('Reset locally; sync failed'); }
 }
