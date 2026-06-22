@@ -1256,6 +1256,7 @@ function expApplyRemoteState(remote, opts={}){
   };
   expState = next;
   expNormalizeState();
+  expLastRemoteState = expSharedStatePayload();
   expSaveLocalStateOnly();
   if(opts.render !== false){
     expRenderSettings(); expRenderWhoAmI();
@@ -1269,6 +1270,7 @@ function expApplyRemoteState(remote, opts={}){
   }
 }
 let expSyncSaving=false, expSyncPending=false, expSyncLoading=false;
+let expLastRemoteState=null;
 function expSyncJsonpLoad(){
   if(!EXP_SYNC_ENABLED || !EXP_SYNC_URL) return Promise.resolve(null);
   return new Promise((resolve, reject)=>{
@@ -1291,7 +1293,7 @@ function expSyncJsonpLoad(){
   });
 }
 
-function expSyncJsonpRequest(action, state){
+function expSyncJsonpRequest(action, payloadObj){
   if(!EXP_SYNC_ENABLED || !EXP_SYNC_URL) return Promise.resolve(null);
   return new Promise((resolve, reject)=>{
     const cb='expSyncCb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
@@ -1299,7 +1301,7 @@ function expSyncJsonpRequest(action, state){
     const sep=EXP_SYNC_URL.includes('?') ? '&' : '?';
     const payload=encodeURIComponent(JSON.stringify({
       action,
-      state,
+      ...payloadObj,
       clientId: expSyncClientId(),
       ts: new Date().toISOString()
     }));
@@ -1313,11 +1315,41 @@ function expSyncJsonpRequest(action, state){
       if(script && script.parentNode) script.parentNode.removeChild(script);
     }
     window[cb]=data=>{ cleanup(); resolve(data); };
-    script.onerror=()=>{ cleanup(); reject(new Error('Sync '+action+' script failed')); };
+    script.onerror=()=>{ cleanup(); reject(new Error('Sync '+action+' script failed'));
+    };
     script.src=EXP_SYNC_URL+sep+'action='+encodeURIComponent(action)+'&payload='+payload+'&callback='+encodeURIComponent(cb)+'&ts='+Date.now();
     document.head.appendChild(script);
   });
 }
+function expCanonical(obj){ return JSON.stringify(obj === undefined ? null : obj); }
+function expListById(list){ const m={}; (Array.isArray(list)?list:[]).forEach(x=>{ if(x && x.id) m[String(x.id)]=x; }); return m; }
+function expTombstoneKey(t){ return [String((t&&t.id)||''), String((t&&t.signature)||''), String((t&&t.date)||'')].join('|'); }
+function expBuildSyncDelta(){
+  const current=expSharedStatePayload();
+  const base=expLastRemoteState || {currency:'MYR', groups:[], members:[], expenses:[], deletedExpenseIds:[], deletedExpenseTombstones:[], deletedMemberIds:[]};
+  const delta={};
+  if(current.currency !== base.currency) delta.currency=current.currency;
+  if(expCanonical(current.groups) !== expCanonical(base.groups)) delta.groups=current.groups;
+
+  const baseMembers=expListById(base.members), baseExpenses=expListById(base.expenses);
+  const memberUpserts=(current.members||[]).filter(m=>expCanonical(m)!==expCanonical(baseMembers[String(m.id)]));
+  const expenseUpserts=(current.expenses||[]).filter(e=>expCanonical(e)!==expCanonical(baseExpenses[String(e.id)]));
+  if(memberUpserts.length) delta.membersUpsert=memberUpserts;
+  if(expenseUpserts.length) delta.expensesUpsert=expenseUpserts;
+
+  const baseDeletedMembers=new Set((base.deletedMemberIds||[]).map(String));
+  const baseDeletedExpenses=new Set((base.deletedExpenseIds||[]).map(String));
+  const deletedMemberIds=(current.deletedMemberIds||[]).map(String).filter(id=>!baseDeletedMembers.has(id));
+  const deletedExpenseIds=(current.deletedExpenseIds||[]).map(String).filter(id=>!baseDeletedExpenses.has(id));
+  if(deletedMemberIds.length) delta.deletedMemberIds=deletedMemberIds;
+  if(deletedExpenseIds.length) delta.deletedExpenseIds=deletedExpenseIds;
+
+  const baseTombKeys=new Set((base.deletedExpenseTombstones||[]).map(expTombstoneKey));
+  const tombstones=(current.deletedExpenseTombstones||[]).filter(t=>!baseTombKeys.has(expTombstoneKey(t)));
+  if(tombstones.length) delta.deletedExpenseTombstones=tombstones;
+  return delta;
+}
+function expDeltaIsEmpty(delta){ return !delta || Object.keys(delta).length===0; }
 
 async function expSyncLoadState(){
   if(expSyncLoading) return;
@@ -1334,7 +1366,10 @@ async function expSyncSaveState(){
   if(expSyncSaving){ expSyncPending=true; return; }
   expSyncSaving=true;
   try{
-    const data = await expSyncJsonpRequest('save', expSharedStatePayload());
+    if(!expLastRemoteState){ try{ await expSyncLoadState(); }catch(e){} }
+    const delta=expBuildSyncDelta();
+    if(expDeltaIsEmpty(delta)) return;
+    const data = await expSyncJsonpRequest('delta', {delta});
     if(data && data.success && data.state) expApplyRemoteState(data.state);
     else setTimeout(()=>expSyncLoadState(), 900);
   }catch(err){ console.warn('Expense sync save failed', err); expToast('Saved locally; sync failed'); }
@@ -1346,7 +1381,7 @@ async function expSyncSaveState(){
 async function expSyncResetState(){
   expSaveLocalStateOnly();
   try{
-    const data = await expSyncJsonpRequest('reset', expSharedStatePayload());
+    const data = await expSyncJsonpRequest('reset', {state: expSharedStatePayload()});
     if(data && data.success && data.state) expApplyRemoteState(data.state);
     else setTimeout(()=>expSyncLoadState(), 900);
   }catch(err){ console.warn('Expense sync reset failed', err); expToast('Reset locally; sync failed'); }
